@@ -1,5 +1,5 @@
 {
-  "name": "@markshawn2020/code-inspector-plugin",
+  "name": "@markshawn/code-inspector-plugin",
   "version": "1.2.10-enhanced.1",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
