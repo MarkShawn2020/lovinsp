@@ -2,19 +2,47 @@
 <img src="https://github.com/zh-lx/code-inspector/assets/73059627/842c3e88-dca7-4743-854c-d61093d3d34f" width="160px" style="margin-bottom: 12px;" />
 
 <p align="center">
-  <h2>code-inspector</h2>
+  <h2>code-inspector (Enhanced)</h2>
   <a href="https://inspector.fe-dev.cn">中文文档</a> | <a href="https://inspector.fe-dev.cn/en">Documentation</a>
 </p>
 
-[![NPM version](https://img.shields.io/npm/v/code-inspector-plugin.svg)](https://www.npmjs.com/package/code-inspector-plugin)
-[![GITHUB star](https://img.shields.io/github/stars/zh-lx/code-inspector?style=flat&label=%E2%AD%90%EF%B8%8F%20stars)](https://github.com/zh-lx/code-inspector)
-[![NPM Downloads](https://img.shields.io/npm/dm/code-inspector-plugin.svg)](https://npmcharts.netlify.app/compare/code-inspector-plugin?minimal=true)
-[![MIT-license](https://img.shields.io/npm/l/code-inspector.svg)](https://opensource.org/licenses/MIT)
-[![GITHUB-language](https://img.shields.io/github/languages/top/zh-lx/code-inspector?logoColor=purple&color=purple)](https://github.com/zh-lx/code-inspector)
+[![NPM version](https://img.shields.io/npm/v/@markshawn/code-inspector-plugin.svg)](https://www.npmjs.com/package/@markshawn/code-inspector-plugin)
+[![GITHUB star](https://img.shields.io/github/stars/MarkShawn2020/code-inspector?style=flat&label=%E2%AD%90%EF%B8%8F%20stars)](https://github.com/MarkShawn2020/code-inspector)
+[![NPM Downloads](https://img.shields.io/npm/dm/@markshawn/code-inspector-plugin.svg)](https://npmcharts.netlify.app/compare/@markshawn/code-inspector-plugin?minimal=true)
+[![MIT-license](https://img.shields.io/npm/l/@markshawn/code-inspector-plugin.svg)](https://opensource.org/licenses/MIT)
+
+> 🎉 **Enhanced version** based on [zh-lx/code-inspector](https://github.com/zh-lx/code-inspector)
+> ✨ **New Feature**: Press `Shift+Alt+C` to toggle between **IDE mode** and **Copy mode**
 
 </div>
 
 <hr />
+
+## 🆕 What's Enhanced?
+
+This fork adds a **mode switching feature** that lets you:
+
+| Mode | Icon | Action | Shortcut |
+|------|------|--------|----------|
+| **IDE Mode** | 📝 | Click element → Open in your IDE | Default |
+| **Copy Mode** | 📋 | Click element → Copy path to clipboard | `Shift+Alt+C` |
+
+### Why This Enhancement?
+
+Sometimes you want to **copy the file path** instead of opening it:
+- Share code locations with teammates
+- Paste into documentation
+- Reference in issue trackers
+- Quick file navigation via terminal
+
+**Demo**:
+1. Press `Shift + Alt` to activate
+2. Press `C` to toggle: 📝 IDE ↔️ 📋 Copy
+3. Click any element!
+
+Toast notifications and status indicators keep you informed of the current mode.
+
+---
 
 ## 📖 Introduction
 
@@ -22,376 +50,246 @@ Click the element on the page, it can automatically open the code editor and pos
 
 ![code-inspector](https://cdn.jsdelivr.net/gh/zh-lx/static-img/code-inspector/demo.gif)
 
-## 💻 Try it out online
+---
 
-- [vue online demo](https://stackblitz.com/edit/vitejs-vite-4pseos?file=vite.config.ts)
-- [react online demo](https://stackblitz.com/edit/vitejs-vite-svtwrr?file=vite.config.ts)
-- [preact online demo](https://stackblitz.com/edit/vitejs-vite-iyawbf?file=vite.config.ts)
-- [solid online demo](https://stackblitz.com/edit/solidjs-templates-6u76jn?file=vite.config.ts)
-- [qwik online demo](https://stackblitz.com/edit/vitejs-vite-antzds?file=vite.config.ts)
-- [svelte online demo](https://stackblitz.com/edit/vitejs-vite-zoncqr?file=vite.config.ts)
-- [astro online demo](https://stackblitz.com/edit/withastro-astro-f5xq1t?file=astro.config.mjs)
+## 🚀 Quick Start
+
+### Installation
+
+```bash
+npm i @markshawn/code-inspector-plugin -D
+# or
+yarn add @markshawn/code-inspector-plugin -D
+# or
+pnpm add @markshawn/code-inspector-plugin -D
+```
+
+### Configuration (Vite Example)
+
+```typescript
+// vite.config.ts
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import { codeInspectorPlugin } from '@markshawn/code-inspector-plugin'
+
+export default defineConfig({
+  plugins: [
+    codeInspectorPlugin({
+      bundler: 'vite',
+    }),
+    react(),
+  ],
+})
+```
+
+### Usage
+
+1. **Activate**: Press `Shift + Alt` (Windows) or `Shift + Option` (Mac)
+2. **Toggle Mode**: Press `C` to switch between:
+   - 📝 **IDE Mode**: Click to open in editor
+   - 📋 **Copy Mode**: Click to copy path (`/path/to/file.tsx:42:10`)
+3. **Click**: Click any element on the page
+
+**Console Output**:
+```
+[code-inspector-plugin] Press and hold ⌥option + shift to enable the feature...
+```
+
+---
 
 ## 🎨 Support
 
 The following are which compilers, web frameworks and editors we supported now:
 
-- The following bundlers are currently supported:<br />
-  ✅ webpack<br />
-  ✅ vite<br />
-  ✅ rspack / rsbuild<br />
-  ✅ farm<br />
-  ✅ esbuild<br />
-  ✅ turbopack<br />
-  ✅ mako<br />
-- The following Web frameworks are currently supported:<br />
-  ✅ vue2 / vue3 / nuxt<br />
-  ✅ react / nextjs / umijs<br />
-  ✅ preact<br />
-  ✅ solid<br />
-  ✅ qwik<br />
-  ✅ svelte<br />
-  ✅ astro<br />
-- The following code editors are currently supported:<br />
+- **Bundlers**:<br />
+  ✅ webpack | ✅ vite | ✅ rspack/rsbuild | ✅ farm | ✅ esbuild | ✅ turbopack | ✅ mako
+
+- **Frameworks**:<br />
+  ✅ vue2/vue3/nuxt | ✅ react/nextjs/umijs | ✅ preact | ✅ solid | ✅ qwik | ✅ svelte | ✅ astro
+
+- **Editors**:<br />
   [VSCode](https://code.visualstudio.com/) | [Cursor](https://www.cursor.com/) | [Windsurf](https://codeium.com/windsurf) | [WebStorm](https://www.jetbrains.com/webstorm/) | [Atom](https://atom.io/) | [HBuilderX](https://www.dcloud.io/hbuilderx.html) | [PhpStorm](https://www.jetbrains.com/phpstorm/) | [PyCharm](https://www.jetbrains.com/pycharm/) | [IntelliJ IDEA](https://www.jetbrains.com/idea/) | [and Others](https://inspector.fe-dev.cn/en/guide/ide.html)
 
-## 🚀 Install
+---
 
-```perl
-npm i code-inspector-plugin -D
-# or
-yarn add code-inspector-plugin -D
-# or
-pnpm add code-inspector-plugin -D
+## 📦 Configuration Examples
+
+<details>
+  <summary>Click to expand: <b>webpack</b></summary>
+
+```js
+// webpack.config.js
+const { codeInspectorPlugin } = require('@markshawn/code-inspector-plugin');
+
+module.exports = () => ({
+  plugins: [
+    codeInspectorPlugin({
+      bundler: 'webpack',
+    }),
+  ],
+});
 ```
 
-## 🌈 Usage
-
-Please check here for more usage information: [code-inspector-plugin configuration](https://inspector.fe-dev.cn/en/guide/start.html#configuration)
-
-- 1.Configuring Build Tools
-
-  <details>
-    <summary>Click to expand configuration about: <b>webpack</b></summary>
-
-  ```js
-  // webpack.config.js
-  const { codeInspectorPlugin } = require('code-inspector-plugin');
-
-  module.exports = () => ({
-    plugins: [
-      codeInspectorPlugin({
-        bundler: 'webpack',
-      }),
-    ],
-  });
-  ```
-
-  </details>
-
-  <details>
-    <summary>Click to expand configuration about: <b>vite</b></summary>
-
-  ```js
-  // vite.config.js
-  import { defineConfig } from 'vite';
-  import { codeInspectorPlugin } from 'code-inspector-plugin';
-
-  export default defineConfig({
-    plugins: [
-      codeInspectorPlugin({
-        bundler: 'vite',
-      }),
-    ],
-  });
-  ```
-
-  </details>
-
-  <details>
-    <summary>Click to expand configuration about: <b>rspack</b></summary>
-
-  ```js
-  // rspack.config.js
-  const { codeInspectorPlugin } = require('code-inspector-plugin');
-
-  module.exports = {
-    // other config...
-    plugins: [
-      codeInspectorPlugin({
-        bundler: 'rspack',
-      }),
-      // other plugins...
-    ],
-  };
-  ```
-
-  </details>
-
-  <details>
-    <summary>Click to expand configuration about: <b>rsbuild</b></summary>
-
-  ```js
-  // rsbuild.config.js
-  const { codeInspectorPlugin } = require('code-inspector-plugin');
-
-  module.exports = {
-    // other config...
-    tools: {
-      rspack: {
-        plugins: [
-          codeInspectorPlugin({
-            bundler: 'rspack',
-          }),
-        ],
-      },
-    },
-  };
-  ```
-
-  </details>
-
-  <details>
-    <summary>Click to expand configuration about: <b>esbuild</b></summary>
-
-  ```js
-  // esbuild.config.js
-  const esbuild = require('esbuild');
-  const { codeInspectorPlugin } = require('code-inspector-plugin');
-
-  esbuild.build({
-    // other configs...
-    // [注意] esbuild 中使用时，dev 函数的返回值需自己根据环境判断，本地开发的环境返回 true，线上打包返回 false
-    plugins: [codeInspectorPlugin({ bundler: 'esbuild', dev: () => true })],
-  });
-  ```
-
-  </details>
-
-  <details>
-    <summary>Click to expand configuration about: <b>farm</b></summary>
-
-  ```js
-  // farm.config.js
-  import { defineConfig } from '@farmfe/core';
-  import { codeInspectorPlugin } from 'code-inspector-plugin';
-
-  export default defineConfig({
-    vitePlugins: [
-      codeInspectorPlugin({
-        bundler: 'vite',
-      }),
-      // ...other code
-    ],
-  });
-  ```
-
-  </details>
-
-  <details>
-    <summary>Click to expand configuration about: <b>vue-cli</b></summary>
-
-  ```js
-  // vue.config.js
-  const { codeInspectorPlugin } = require('code-inspector-plugin');
-
-  module.exports = {
-    // ...other code
-    chainWebpack: (config) => {
-      config.plugin('code-inspector-plugin').use(
-        codeInspectorPlugin({
-          bundler: 'webpack',
-        })
-      );
-    },
-  };
-  ```
-
-  </details>
-
-  <details>
-    <summary>Click to expand configuration about: <b>nuxt</b></summary>
-
-  - For nuxt3.x :
-
-    ```js
-    // nuxt.config.js
-    import { codeInspectorPlugin } from 'code-inspector-plugin';
-
-    // https://nuxt.com/docs/api/configuration/nuxt-config
-    export default defineNuxtConfig({
-      vite: {
-        plugins: [codeInspectorPlugin({ bundler: 'vite' })],
-      },
-    });
-    ```
-
-  - For nuxt2.x :
-
-    ```js
-    // nuxt.config.js
-    import { codeInspectorPlugin } from 'code-inspector-plugin';
-
-    export default {
-      build: {
-        extend(config) {
-          config.plugins.push(codeInspectorPlugin({ bundler: 'webpack' }));
-          return config;
-        },
-      },
-    };
-    ```
-
-  </details>
-
-  <details>
-    <summary>Click to expand configuration about: <b>next.js</b></summary>
-
-  - For next.js(<= 14.x):
-
-    ```js
-    // next.config.js
-    const { codeInspectorPlugin } = require('code-inspector-plugin');
-
-    const nextConfig = {
-      webpack: (config, { dev, isServer }) => {
-        config.plugins.push(codeInspectorPlugin({ bundler: 'webpack' }));
-        return config;
-      },
-    };
-
-    module.exports = nextConfig;
-    ```
-
-  - For next.js(15.0.x ~ 15.2.x):
-
-    ```js
-    import type { NextConfig } from 'next';
-    import { codeInspectorPlugin } from 'code-inspector-plugin';
-
-    const nextConfig: NextConfig = {
-      experimental: {
-        turbo: {
-          rules: codeInspectorPlugin({
-            bundler: 'turbopack',
-          }),
-        },
-      },
-    };
-
-    export default nextConfig;
-    ```
-
-  - For next.js(>= 15.3.x):
-
-    ```js
-    // next.config.js
-    import type { NextConfig } from 'next';
-    import { codeInspectorPlugin } from 'code-inspector-plugin';
-
-    const nextConfig: NextConfig = {
-      turbopack: {
-        rules: codeInspectorPlugin({
-          bundler: 'turbopack',
-        }),
-      },
-    };
-
-    export default nextConfig;
-    ```
-
-  </details>
-
-  <details>
-    <summary>Click to expand configuration about: <b>umi.js</b></summary>
-
-  - With webpack:
-
-    ```js
-    // umi.config.js or umirc.js
-    import { defineConfig } from '@umijs/max';
-    import { codeInspectorPlugin } from 'code-inspector-plugin';
-
-    export default defineConfig({
-      chainWebpack(memo) {
-        memo.plugin('code-inspector-plugin').use(
-          codeInspectorPlugin({
-            bundler: 'webpack',
-          })
-        );
-      },
-      // other config
-    });
-    ```
-
-  - With mako:
-
-    ```ts
-    // .umirc.ts
-    import { defineConfig } from 'umi';
-    import { codeInspectorPlugin } from 'code-inspector-plugin';
-
-    export default defineConfig({
-      // other config...
-      mako: {
-        plugins: [
-          codeInspectorPlugin({
-            bundler: 'mako',
-          }),
-        ],
-      },
-    });
-    ```
-
-  </details>
-
-  <details>
-    <summary>Click to expand configuration about: <b>astro</b></summary>
-
-  ```js
-  // astro.config.mjs
-  import { defineConfig } from 'astro/config';
-  import { codeInspectorPlugin } from 'code-inspector-plugin';
-
-  export default defineConfig({
-    vite: {
-      plugins: [codeInspectorPlugin({ bundler: 'vite' })],
-    },
-  });
-  ```
-
-  </details>
-
-- 2.Using the function
-
-  Now you can enjoy using it!~
-
-  When pressing the combination keys on the page, moving the mouse over the page will display a mask layer on the DOM with relevant information. Clicking will automatically open the IDE and position the cursor to the corresponding code location. (The default combination keys for Mac are `Option + Shift`; for Windows, it's `Alt + Shift`, and the browser console will output related combination key prompts)
-
-  <img src="https://cdn.jsdelivr.net/gh/zh-lx/static-img/code-inspector/console-success.png" width="700px" />
-
-## 👨‍💻 Contributors
-
-Special thanks to the contributors of this project:<br />
-
-<img src="https://contrib.rocks/image?repo=zh-lx/code-inspector" height="40" />
+</details>
+
+<details>
+  <summary>Click to expand: <b>vite</b></summary>
+
+```js
+// vite.config.js
+import { defineConfig } from 'vite';
+import { codeInspectorPlugin } from '@markshawn/code-inspector-plugin';
+
+export default defineConfig({
+  plugins: [
+    codeInspectorPlugin({
+      bundler: 'vite',
+    }),
+  ],
+});
+```
+
+</details>
+
+<details>
+  <summary>Click to expand: <b>Next.js 15+</b></summary>
+
+```js
+// next.config.js
+import type { NextConfig } from 'next';
+import { codeInspectorPlugin } from '@markshawn/code-inspector-plugin';
+
+const nextConfig: NextConfig = {
+  turbopack: {
+    rules: codeInspectorPlugin({
+      bundler: 'turbopack',
+    }),
+  },
+};
+
+export default nextConfig;
+```
+
+</details>
+
+<details>
+  <summary>Click to expand: <b>Nuxt 3</b></summary>
+
+```js
+// nuxt.config.js
+import { codeInspectorPlugin } from '@markshawn/code-inspector-plugin';
+
+export default defineNuxtConfig({
+  vite: {
+    plugins: [codeInspectorPlugin({ bundler: 'vite' })],
+  },
+});
+```
+
+</details>
+
+For more bundler configurations, see the [official documentation](https://inspector.fe-dev.cn/en/guide/start.html#configuration).
+
+---
+
+## 🆚 Comparison with Original
+
+| Feature | Original | Enhanced (This Fork) |
+|---------|----------|----------------------|
+| Open in IDE | ✅ | ✅ |
+| Copy file path | ❌ | ✅ **New!** |
+| Mode switching | ❌ | ✅ **Shift+Alt+C** |
+| Toast notifications | ❌ | ✅ |
+| Mode indicator | ❌ | ✅ |
+| All original features | ✅ | ✅ |
+
+---
+
+## 🔄 Migration from Original
+
+If you're using the original `code-inspector-plugin`:
+
+```bash
+# 1. Uninstall original
+npm uninstall code-inspector-plugin
+
+# 2. Install enhanced version
+npm install -D @markshawn/code-inspector-plugin
+
+# 3. Update imports in config files
+# Change:
+import { codeInspectorPlugin } from 'code-inspector-plugin'
+# To:
+import { codeInspectorPlugin } from '@markshawn/code-inspector-plugin'
+```
+
+**No other changes needed!** The API is 100% compatible.
+
+---
+
+## 📋 Detailed Features
+
+### 1. IDE Mode (Default)
+Click on any element → Automatically opens in your configured IDE with cursor positioned at the exact line and column.
+
+### 2. Copy Mode (New!)
+Click on any element → Copies the file path to your clipboard in the format:
+```
+/Users/you/project/src/components/Button.tsx:42:10
+```
+
+Perfect for:
+- Creating issue references
+- Sharing code locations
+- Documentation
+- Terminal navigation (`code $(pbpaste)`)
+
+### 3. Visual Feedback
+- **Toast Notifications**: "Switched to 📋 Copy mode" / "Switched to 📝 IDE mode"
+- **Status Indicator**: Shows current mode in the overlay
+- **Keyboard Shortcut**: `Shift+Alt+C` to toggle
+
+---
+
+## 🙏 Credits
+
+This enhanced version is based on the excellent work of [@zh-lx](https://github.com/zh-lx) and the [code-inspector](https://github.com/zh-lx/code-inspector) project.
+
+**Original Project**: https://github.com/zh-lx/code-inspector
+**Original Author**: [@zh-lx](https://github.com/zh-lx)
+
+All credits for the core functionality go to the original author. This fork only adds the mode switching enhancement.
+
+---
 
 ## 📧 Communication and Feedback
 
-For any usage issues, please leave a message below my [Twitter](https://twitter.com/zhulxing312147) post or [submit an issue](https://github.com/zh-lx/code-inspector/issues) on Github.
+- **Issues**: [Submit an issue](https://github.com/MarkShawn2020/code-inspector/issues)
+- **Original Project Issues**: [Original project issues](https://github.com/zh-lx/code-inspector/issues)
+- **Pull Request**: [PR to upstream](https://github.com/zh-lx/code-inspector/pull/406) (pending merge)
 
-For Chinese users, you can join the QQ group `769748484` or add the author's WeiXin account `zhoulx1688888` for consultation and feedback:
+---
 
-<div style="display: flex; column-gap: 16px; row-gap: 16px; flex-wrap: wrap;">
-  <img src="https://cdn.jsdelivr.net/gh/zh-lx/static-img/code-inspector/qq-group.png" width="200" height="272" />
-  <img src="https://cdn.jsdelivr.net/gh/zh-lx/static-img/code-inspector/wx-group.jpg" width="200" height="272" />
-  <img src="https://cdn.jsdelivr.net/gh/zh-lx/static-img/code-inspector/wx-qrcode.jpg" width="200" height="272" />
+## 📄 License
+
+MIT License - Same as the original project
+
+**Copyright**:
+- Original: © 2024 zh-lx
+- Enhanced: © 2024 MarkShawn2020
+
+---
+
+## 🌟 Star History
+
+If you find this enhancement useful, please consider:
+- ⭐ Starring this repository
+- ⭐ Starring the [original repository](https://github.com/zh-lx/code-inspector)
+- 🔄 Sharing with your team
+
+---
+
+<div align="center">
+Made with ❤️ by <a href="https://github.com/MarkShawn2020">MarkShawn2020</a><br/>
+Based on <a href="https://github.com/zh-lx/code-inspector">code-inspector</a> by <a href="https://github.com/zh-lx">zh-lx</a>
 </div>
-
-## 💖 Sponsor
-
-Sponsoring this project can help the author create better. If you are willing, thanks for sponsoring me through [here](https://inspector.fe-dev.cn/en/more/sponsor.html).
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=zh-lx/code-inspector&type=Date)](https://www.star-history.com/#zh-lx/code-inspector&Date)
