@@ -1,6 +1,6 @@
 {
-  "name": "@code-inspector/core",
-  "version": "1.2.10",
+  "name": "@markshawn/code-inspector-core",
+  "version": "1.2.10-enhanced.1",
   "main": "dist/index.js",
   "module": "./dist/index.mjs",
   "types": "types/index.d.ts",
@@ -20,11 +20,11 @@
       }
     }
   },
-  "repository": "git@github.com:zh-lx/code-inspector.git",
-  "author": "zh-lx <18366276315@163.com>",
+  "repository": "git@github.com:MarkShawn2020/code-inspector.git",
+  "author": "MarkShawn2020 (enhanced), zh-lx <18366276315@163.com> (original)",
   "license": "MIT",
-  "homepage": "https://inspector.fe-dev.cn/en",
-  "description": "Click the dom on the page, it will open your IDE and position the cursor to the source code location of the dom.",
+  "homepage": "https://github.com/MarkShawn2020/code-inspector",
+  "description": "Enhanced code-inspector core with mode switching: Click DOM to open IDE or copy path. Press Shift+Alt+C to toggle modes.",
   "keywords": [
     "webpack",
     "vite",
