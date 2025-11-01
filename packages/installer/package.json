@@ -1,0 +1,27 @@
+{
+  "name": "@markshawn/code-inspector-enhanced",
+  "version": "1.2.10-enhanced.1",
+  "description": "Enhanced code-inspector auto-installer with mode switching feature",
+  "main": "install.js",
+  "bin": {
+    "code-inspector-enhanced-install": "install.js"
+  },
+  "scripts": {
+    "postinstall": "node install.js"
+  },
+  "repository": "git@github.com:MarkShawn2020/code-inspector.git",
+  "author": "MarkShawn2020",
+  "license": "MIT",
+  "homepage": "https://github.com/MarkShawn2020/code-inspector",
+  "keywords": [
+    "code-inspector",
+    "enhanced",
+    "mode-switching",
+    "vite",
+    "webpack",
+    "plugin"
+  ],
+  "peerDependencies": {
+    "code-inspector-plugin": "^1.2.10"
+  }
+}
