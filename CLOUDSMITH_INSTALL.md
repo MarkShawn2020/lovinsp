@@ -6,6 +6,7 @@
 
 ```ini
 @code-inspector:registry=https://npm.cloudsmith.io/mark/code-inspector/
+code-inspector-plugin:registry=https://npm.cloudsmith.io/mark/code-inspector/
 ```
 
 然后正常安装：
@@ -35,6 +36,7 @@ pnpm add https://npm.cloudsmith.io/mark/code-inspector/code-inspector-mako/-/cod
 
 ```ini
 @code-inspector:registry=https://npm.cloudsmith.io/mark/code-inspector/
+code-inspector-plugin:registry=https://npm.cloudsmith.io/mark/code-inspector/
 ```
 
 ## 验证安装
