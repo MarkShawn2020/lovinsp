@@ -1,19 +1,20 @@
 # 从 Cloudsmith 安装 code-inspector
 
-## 方法一：配置 .npmrc（推荐）
+## 方法一：.npmrc + tarball URL（推荐）
 
 在你的项目根目录创建 `.npmrc` 文件：
 
 ```ini
 @code-inspector:registry=https://npm.cloudsmith.io/mark/code-inspector/
-code-inspector-plugin:registry=https://npm.cloudsmith.io/mark/code-inspector/
 ```
 
-然后正常安装：
+然后安装主包（使用 tarball URL）：
 
 ```bash
-pnpm add code-inspector-plugin -D
+pnpm add https://npm.cloudsmith.io/mark/code-inspector/code-inspector-plugin/-/code-inspector-plugin-1.2.11.tgz -D
 ```
+
+**说明：** pnpm 不支持为无 scope 的单个包配置 registry，所以主包需要用 tarball URL 安装。依赖的 `@code-inspector/*` 包会自动从 Cloudsmith 拉取。
 
 ## 方法二：使用 tarball URL
 
