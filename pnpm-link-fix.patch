@@ -1,0 +1,149 @@
+From c815041235644c36db24855032a32058e8f9c123 Mon Sep 17 00:00:00 2001
+From: markshawn2020 <shawninjuly@gmail.com>
+Date: Wed, 5 Nov 2025 01:04:44 +0800
+Subject: [PATCH 1/3] fix: use relative path for Next.js compatibility
+
+---
+ packages/core/src/server/use-client.ts | 26 +++++++++++++++++---------
+ 1 file changed, 17 insertions(+), 9 deletions(-)
+
+diff --git a/packages/core/src/server/use-client.ts b/packages/core/src/server/use-client.ts
+index e085e54..907a544 100644
+--- a/packages/core/src/server/use-client.ts
++++ b/packages/core/src/server/use-client.ts
+@@ -338,17 +338,18 @@ export async function getCodeWithWebComponent({
+     );
+     if (isNextjs || options.importClient === 'file') {
+       writeEslintRcFile(record.output);
+-      const webComponentNpmPath = writeWebComponentFile(
++      const webComponentPath = writeWebComponentFile(
+         record.output,
+         injectCode,
+-        getProjectRecord(record)?.port || 0
++        getProjectRecord(record)?.port || 0,
++        file
+       );
+-      if (!file.match(webComponentNpmPath)) {
++      if (!file.match(webComponentPath)) {
+         if (isNextjs) {
+-          code = addImportToEntry(code, webComponentNpmPath);
++          code = addImportToEntry(code, webComponentPath);
+           code = addNextEmptyElementToEntry(code);
+         } else {
+-          code = `import '${webComponentNpmPath}';${code}`;
++          code = `import '${webComponentPath}';${code}`;
+         }
+       }
+     } else {
+@@ -376,15 +377,22 @@ module.exports = {
+ function writeWebComponentFile(
+   targetPath: string,
+   content: string,
+-  port: number
++  port: number,
++  fromFile: string
+ ) {
+   const webComponentFileName = `append-code-${port}.js`;
+   const webComponentFilePath = path.resolve(targetPath, webComponentFileName);
+   fs.writeFileSync(webComponentFilePath, content, 'utf-8');
+ 
+-  // Use absolute path for compatibility with pnpm link, npm link, and yarn link
+-  // This ensures the file can be resolved regardless of symlink configurations
+-  return normalizePath(webComponentFilePath);
++  // Calculate relative path from the importing file to the generated file
++  // This works with pnpm link and is required by Next.js
++  const relativePath = path.relative(path.dirname(fromFile), webComponentFilePath);
++  // Ensure path starts with ./ or ../
++  const normalizedRelative = relativePath.startsWith('.')
++    ? relativePath
++    : `./${relativePath}`;
++
++  return normalizePath(normalizedRelative);
+ }
+ 
+ export function isNextjsProject() {
+-- 
+2.50.1 (Apple Git-155)
+
+
+From be775f9dcc473a1b6ee151266d901e8697e904d0 Mon Sep 17 00:00:00 2001
+From: markshawn2020 <shawninjuly@gmail.com>
+Date: Wed, 5 Nov 2025 01:10:25 +0800
+Subject: [PATCH 2/3] fix: write generated files to project cache dir
+
+---
+ packages/code-inspector-plugin/src/index.ts | 15 ++++++---------
+ 1 file changed, 6 insertions(+), 9 deletions(-)
+
+diff --git a/packages/code-inspector-plugin/src/index.ts b/packages/code-inspector-plugin/src/index.ts
+index 1c073ee..a76c549 100644
+--- a/packages/code-inspector-plugin/src/index.ts
++++ b/packages/code-inspector-plugin/src/index.ts
+@@ -5,12 +5,11 @@ import { TurbopackCodeInspectorPlugin } from '@code-inspector/turbopack';
+ import { MakoCodeInspectorPlugin } from '@code-inspector/mako';
+ import {
+   CodeOptions,
+-  fileURLToPath,
+   getEnvVariable,
+   resetFileRecord,
+ } from '@code-inspector/core';
+ import chalk from 'chalk';
+-import path, { dirname } from 'path';
++import path from 'path';
+ 
+ export interface CodeInspectorPluginOptions extends CodeOptions {
+   /**
+@@ -39,16 +38,14 @@ export function CodeInspectorPlugin(options: CodeInspectorPluginOptions): any {
+     }
+   }
+ 
+-  let compatibleDirname = '';
+-  if (typeof __dirname !== 'undefined') {
+-    compatibleDirname = __dirname;
+-  } else {
+-    compatibleDirname = dirname(fileURLToPath(import.meta.url));
+-  }
++  // Write generated files to user project's node_modules/.cache directory
++  // This ensures relative imports work correctly with pnpm link
++  const outputDir = path.resolve(process.cwd(), 'node_modules/.cache/code-inspector');
++
+   const params = {
+     ...options,
+     close,
+-    output: path.resolve(compatibleDirname, './'),
++    output: outputDir,
+   };
+   resetFileRecord(params.output);
+   if (options.bundler === 'webpack' || options.bundler === 'rspack') {
+-- 
+2.50.1 (Apple Git-155)
+
+
+From f69d34361b161220cfbd6a95c046629007e9f495 Mon Sep 17 00:00:00 2001
+From: markshawn2020 <shawninjuly@gmail.com>
+Date: Wed, 5 Nov 2025 01:13:21 +0800
+Subject: [PATCH 3/3] fix: ensure cache directory exists before write
+
+---
+ packages/core/src/shared/record-cache.ts | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/packages/core/src/shared/record-cache.ts b/packages/core/src/shared/record-cache.ts
+index 6b77c81..c6002da 100644
+--- a/packages/core/src/shared/record-cache.ts
++++ b/packages/core/src/shared/record-cache.ts
+@@ -3,6 +3,11 @@ import fs from 'fs';
+ import { RecordInfo } from './type';
+ 
+ export const resetFileRecord = (output: string) => {
++  // Ensure output directory exists
++  if (!fs.existsSync(output)) {
++    fs.mkdirSync(output, { recursive: true });
++  }
++
+   const recordFilePath = path.resolve(output, './record.json');
+   const projectDir = process.cwd();
+   let content: {
+-- 
+2.50.1 (Apple Git-155)
+
