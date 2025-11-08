@@ -440,7 +440,7 @@ In your project's `package.json`:
 ```json
 {
   "devDependencies": {
-    "code-inspector-plugin": "https://npm.cloudsmith.io/mark/code-inspector/code-inspector-plugin/-/code-inspector-plugin-1.2.10.tgz"
+    "code-inspector-plugin": "https://npm.cloudsmith.io/mark/code-inspector/code-inspector-plugin/-/code-inspector-plugin-1.2.12.tgz"
   }
 }
 ```
@@ -460,7 +460,7 @@ Then in `package.json`:
 ```json
 {
   "devDependencies": {
-    "code-inspector-plugin": "1.2.10"
+    "code-inspector-plugin": "1.2.12"
   }
 }
 ```
