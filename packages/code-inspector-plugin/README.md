@@ -2,100 +2,74 @@
 <img src="https://github.com/zh-lx/code-inspector/assets/73059627/842c3e88-dca7-4743-854c-d61093d3d34f" width="160px" style="margin-bottom: 12px;" />
 
 <p align="center">
-  <h2>code-inspector</h2>
-  <a href="https://inspector.fe-dev.cn">中文文档</a> | <a href="https://inspector.fe-dev.cn/en">Documentation</a>
+  <h2>code-inspector (AI-Enhanced Fork)</h2>
+  <b>Fork of <a href="https://github.com/zh-lx/code-inspector">zh-lx/code-inspector</a> with AI-first workflow enhancements</b>
 </p>
 
-[![NPM version](https://img.shields.io/npm/v/code-inspector-plugin.svg)](https://www.npmjs.com/package/code-inspector-plugin)
-[![GITHUB star](https://img.shields.io/github/stars/zh-lx/code-inspector?style=flat&label=%E2%AD%90%EF%B8%8F%20stars)](https://github.com/zh-lx/code-inspector)
-[![NPM Downloads](https://img.shields.io/npm/dm/code-inspector-plugin.svg)](https://npmcharts.netlify.app/compare/code-inspector-plugin?minimal=true)
+[![Original Repo](https://img.shields.io/badge/upstream-zh--lx%2Fcode--inspector-blue)](https://github.com/zh-lx/code-inspector)
+[![Fork Version](https://img.shields.io/badge/fork-v1.2.12-green)](https://github.com/MarkShawn2020/code-inspector)
 [![MIT-license](https://img.shields.io/npm/l/code-inspector.svg)](https://opensource.org/licenses/MIT)
-[![GITHUB-language](https://img.shields.io/github/languages/top/zh-lx/code-inspector?logoColor=purple&color=purple)](https://github.com/zh-lx/code-inspector)
 
 </div>
 
 <hr />
 
-## 📖 Introduction
+## 🎯 Why This Fork?
 
-**Stop guessing where the code is. Just click.**
+This is an enhanced fork of [code-inspector-plugin](https://github.com/zh-lx/code-inspector) with **AI-first workflow improvements**.
 
-Click any element on the page, instantly open your IDE with the cursor at the exact source code location. No more searching through files, no more "which component renders this button" detective work.
+The original plugin is excellent for traditional IDE workflows (click → open in VSCode/Cursor). But if you're doing **Vibe Coding** (living in Claude Code, Cursor Composer, or any AI chat interface), you need a different workflow:
 
-![code-inspector](https://cdn.jsdelivr.net/gh/zh-lx/static-img/code-inspector/demo.gif)
+> **"I don't want to open my IDE. I want to copy the file path and paste it to my AI assistant."**
 
-### 🎯 The Problem It Solves
+### 🆕 What's New in This Fork (v1.2.12)
 
-You know that feeling when you see a bug on the page and think "where the hell is this in the code?" You inspect the element, see some cryptic class names, grep through files, and 10 minutes later you finally find it.
-
-**This plugin ends that nonsense.**
-
-Hold `Option + Shift` (Mac) or `Alt + Shift` (Windows), hover over any element, and boom - you see exactly where it comes from. Click once, your IDE opens to that exact file and line. That's it.
-
-### ✨ Latest Features (v1.2.12)
-
-For the **Vibe Coding** crowd (you know who you are - Claude Code, Cursor Composer, living in AI chat):
-
-- **📋 Copy Mode**: Don't want to open IDE? Just copy the file path and paste it to your AI assistant
-  - Visual feedback with toast notifications
+- **📋 Copy Mode**: Click to copy file paths instead of opening IDE
+  - Visual toast notifications when copying
   - Perfect for `@`-mentioning files in AI chats
+  - Format: `src/components/Button.tsx:42:10`
 
-- **⌨️ Mode Switching**: Press `Shift+Alt+C` / `Shift+Opt+C` to cycle through:
-  - **Copy Path** → `src/components/Button.tsx:42:10` → paste to Claude
-  - **Open in IDE** → traditional workflow for Cursor/VSCode users
-  - **Open Target** → custom URL template (for your internal tools)
-  - **Copy + Open** → do both at once
+- **⌨️ Mode Switching**: Press `Shift+Alt+C` / `Shift+Opt+C` to cycle through modes:
+  - Copy Path (AI workflow)
+  - Open in IDE (traditional workflow)
+  - Copy + Open (hybrid workflow)
+  - Open Target (custom URL)
 
-- **🔄 Smart Context Menu**: Right-click any element for a layer panel showing the component hierarchy. Click any layer, it respects your current mode (copy or open).
+- **🔄 Dynamic Context Menu**: Right-click shows component hierarchy, all actions respect current mode
 
-**Why this matters**: In 2025, we have AI that can fix any code issue instantly. But we're still taking screenshots and describing bugs like it's 2010. This plugin gives AI your exact context in 3 seconds, not 3 minutes.
+- **🎨 Polished UX**: Toast notifications, dynamic panel titles, unified interaction model
 
-## 💻 Try it out online
+**In short**: Give AI your exact code context in 3 seconds, not 3 minutes of screenshot describing.
 
-- [vue online demo](https://stackblitz.com/edit/vitejs-vite-4pseos?file=vite.config.ts)
-- [react online demo](https://stackblitz.com/edit/vitejs-vite-svtwrr?file=vite.config.ts)
-- [preact online demo](https://stackblitz.com/edit/vitejs-vite-iyawbf?file=vite.config.ts)
-- [solid online demo](https://stackblitz.com/edit/solidjs-templates-6u76jn?file=vite.config.ts)
-- [qwik online demo](https://stackblitz.com/edit/vitejs-vite-antzds?file=vite.config.ts)
-- [svelte online demo](https://stackblitz.com/edit/vitejs-vite-zoncqr?file=vite.config.ts)
-- [astro online demo](https://stackblitz.com/edit/withastro-astro-f5xq1t?file=astro.config.mjs)
+📚 **For original features** (framework support, IDE support, core functionality), see [upstream docs](https://inspector.fe-dev.cn/en)
 
-## 🎨 Support
+## 🚀 Installation
 
-The following are which compilers, web frameworks and editors we supported now:
+Since this is a fork, you need to install from our private registry (Cloudsmith) instead of npm.
 
-- The following bundlers are currently supported:<br />
-  ✅ webpack<br />
-  ✅ vite<br />
-  ✅ rspack / rsbuild<br />
-  ✅ farm<br />
-  ✅ esbuild<br />
-  ✅ turbopack<br />
-  ✅ mako<br />
-- The following Web frameworks are currently supported:<br />
-  ✅ vue2 / vue3 / nuxt<br />
-  ✅ react / nextjs / umijs<br />
-  ✅ preact<br />
-  ✅ solid<br />
-  ✅ qwik<br />
-  ✅ svelte<br />
-  ✅ astro<br />
-- The following code editors are currently supported:<br />
-  [VSCode](https://code.visualstudio.com/) | [Cursor](https://www.cursor.com/) | [Windsurf](https://codeium.com/windsurf) | [WebStorm](https://www.jetbrains.com/webstorm/) | [Atom](https://atom.io/) | [HBuilderX](https://www.dcloud.io/hbuilderx.html) | [PhpStorm](https://www.jetbrains.com/phpstorm/) | [PyCharm](https://www.jetbrains.com/pycharm/) | [IntelliJ IDEA](https://www.jetbrains.com/idea/) | [and Others](https://inspector.fe-dev.cn/en/guide/ide.html)
-
-## 🚀 Quick Start
-
-### Installation
+### Option 1: Direct URL (Recommended)
 
 ```bash
-npm i code-inspector-plugin -D
-# or
-pnpm add code-inspector-plugin -D
+pnpm add code-inspector-plugin@https://npm.cloudsmith.io/mark/code-inspector/code-inspector-plugin/-/code-inspector-plugin-1.2.12.tgz
 ```
 
-### Basic Setup
+### Option 2: Configure Registry
 
-**Most Common: Vite Projects**
+Create or update `.npmrc` in your project root:
+
+```ini
+# For scoped packages only (recommended)
+@code-inspector:registry=https://npm.cloudsmith.io/mark/code-inspector/
+
+# Then install with full URL
+pnpm add code-inspector-plugin@https://npm.cloudsmith.io/mark/code-inspector/code-inspector-plugin/-/code-inspector-plugin-1.2.12.tgz
+```
+
+> **Why Cloudsmith?** We use the same package name as upstream, so we need a private registry. Cloudsmith automatically proxies other dependencies from npm, so you don't need to change anything else.
+
+## 🎮 Usage
+
+### Quick Start (AI Workflow)
 
 ```js
 // vite.config.js
@@ -105,53 +79,88 @@ export default {
   plugins: [
     codeInspectorPlugin({
       bundler: 'vite',
+      defaultAction: 'copy',  // 👈 Copy mode for AI workflow
+      showSwitch: true,       // 👈 Show toggle button
     }),
   ],
 };
 ```
 
-**Next.js (with auto-detection)**
+Now:
+1. Run your dev server
+2. Hold `Option+Shift` (Mac) or `Alt+Shift` (Windows)
+3. Click any element → path copied!
+4. Paste to Claude: `@src/components/Button.tsx:42:10 fix this`
 
-```js
-// next.config.js
-const { codeInspectorPlugin } = require('code-inspector-plugin');
-
-module.exports = {
-  webpack: (config, { dev }) => {
-    config.plugins.push(codeInspectorPlugin({ bundler: 'webpack' }));
-    return config;
-  },
-};
-```
-
-That's it! Press `Option+Shift` (Mac) or `Alt+Shift` (Windows) on your dev server and start clicking.
-
-### Advanced Options
+### Traditional IDE Workflow
 
 ```js
 codeInspectorPlugin({
   bundler: 'vite',
-  showSwitch: true,      // Show floating toggle button
-  defaultAction: 'copy', // 'copy' | 'locate' | 'target' | 'all'
-  copy: true,           // Enable copy mode
-  locate: true,         // Enable IDE opening
-  editor: 'vscode',     // Your IDE (auto-detected by default)
+  defaultAction: 'locate',  // Opens IDE instead of copying
 })
 ```
 
-**For AI-First Workflows**: Set `defaultAction: 'copy'` and `showSwitch: true`. Toggle between copy and IDE modes with the floating button or `Shift+Alt+C`.
+### Hybrid Workflow
 
-📚 **Full documentation**: [Configuration Guide](https://inspector.fe-dev.cn/en/guide/start.html#configuration)
+```js
+codeInspectorPlugin({
+  bundler: 'vite',
+  defaultAction: 'copy',
+  showSwitch: true,
+  copy: true,
+  locate: true,
+})
+```
+
+Press `Shift+Alt+C` / `Shift+Opt+C` to switch between copy and IDE modes on the fly.
+
+### All Options
+
+```js
+codeInspectorPlugin({
+  bundler: 'vite',              // Required: 'vite' | 'webpack' | 'rspack' | etc.
+  defaultAction: 'copy',        // 'copy' | 'locate' | 'target' | 'all'
+  showSwitch: true,             // Show floating toggle button
+  copy: true,                   // Enable copy mode
+  locate: true,                 // Enable IDE opening
+  target: 'custom-url-{file}',  // Custom URL template
+  editor: 'vscode',             // IDE (auto-detected if not specified)
+})
+```
+
+📚 **For framework-specific setup** (Next.js, Nuxt, etc.), **bundler options**, and **advanced configs**, see [upstream docs](https://inspector.fe-dev.cn/en/guide/start.html)
+
+## 🎬 Demo
+
+![](https://the-dummy.oss-cn-beijing.aliyuncs.com/undefinedCC%E4%B8%8A%E4%B8%8B%E6%96%87%E6%9C%BA%E5%88%B6-2025-11-05-140011.png)
+
+**Left**: Traditional workflow - taking screenshots, describing bugs
+**Right**: AI-enhanced workflow - 3 seconds, exact context
+
+## 🤝 Upstream & Contributing
+
+This fork tracks [zh-lx/code-inspector](https://github.com/zh-lx/code-inspector). We maintain compatibility with upstream and contribute improvements back when possible.
+
+**Original PR**: [#409 - Add mode switching features](https://github.com/zh-lx/code-inspector/pull/409)
+
+If you want these features in the official version, please 👍 the PR or leave a comment!
+
+## 📖 Documentation
+
+- **Upstream Docs**: [inspector.fe-dev.cn](https://inspector.fe-dev.cn/en) - Full feature list, all framework configs
+- **This Fork**: Focus on AI-enhanced features above
+- **Maintenance**: See [MAINTENANCE.md](./docs/MAINTENANCE.md) for development workflow
 
 <details>
-<summary><b>📦 Framework-Specific Configs (click to expand)</b></summary>
+<summary><b>🔧 For Reference: Detailed Framework Configs (from upstream)</b></summary>
 
-## 🌈 Detailed Setup
+> **Note**: These are reference configs from upstream. Our fork works exactly the same way, just install from Cloudsmith instead of npm.
 
-- 1.Configuring Build Tools
+### Webpack
 
   <details>
-    <summary>Click to expand configuration about: <b>webpack</b></summary>
+    <summary>Click to expand</summary>
 
   ```js
   // webpack.config.js
@@ -443,68 +452,30 @@ codeInspectorPlugin({
 
 </details>
 
-## 💡 Real-World Workflows
+## 🔧 Development & Maintenance
 
-### Traditional IDE Workflow
+- **Fork Maintainer**: [@MarkShawn2020](https://github.com/MarkShawn2020)
+- **Maintenance Guide**: [MAINTENANCE.md](./docs/MAINTENANCE.md) - Publishing, releases, development setup
+- **Issues**: Report fork-specific issues [here](https://github.com/MarkShawn2020/code-inspector/issues)
+- **Upstream Issues**: Report general issues to [zh-lx/code-inspector](https://github.com/zh-lx/code-inspector/issues)
 
-```
-1. Hold Option+Shift (Mac) or Alt+Shift (Windows)
-2. Hover over any element → see its source path
-3. Click → IDE opens at exact line
-```
+## 🌟 Credits
 
-Perfect for Cursor, VSCode, WebStorm users who live in their editor.
+- **Original Author**: [@zh-lx](https://github.com/zh-lx) - Huge thanks for creating this amazing tool!
+- **Original Repo**: [zh-lx/code-inspector](https://github.com/zh-lx/code-inspector)
+- **Contributors**: <img src="https://contrib.rocks/image?repo=zh-lx/code-inspector" height="20" />
 
-### AI-First Workflow (Vibe Coding)
+## 📧 Support
 
-```
-1. Configure: defaultAction: 'copy', showSwitch: true
-2. Hold Option+Shift, click element
-3. Path copied: src/components/Button.tsx:42:10
-4. Paste to Claude/Cursor: "@src/components/Button.tsx:42:10 fix this bug"
-```
+- **Fork Questions**: Open an issue on [this repo](https://github.com/MarkShawn2020/code-inspector/issues)
+- **General Questions**: Visit [upstream docs](https://inspector.fe-dev.cn/en) or [upstream repo](https://github.com/zh-lx/code-inspector)
+- **Original Author**: Follow [@zh-lx on Twitter](https://twitter.com/zhulxing312147) or [sponsor the project](https://inspector.fe-dev.cn/en/more/sponsor.html)
 
-**The difference?** Instead of taking screenshots and describing bugs, you give AI the exact context in 3 seconds. This is how you debug in 2025.
+---
 
-### Hybrid Workflow
+**Love this fork?** Consider:
+- ⭐ Starring [this repo](https://github.com/MarkShawn2020/code-inspector)
+- ⭐ Starring the [original repo](https://github.com/zh-lx/code-inspector)
+- 👍 Supporting [the upstream PR #409](https://github.com/zh-lx/code-inspector/pull/409) to get these features merged!
 
-Press `Shift+Alt+C` / `Shift+Opt+C` to switch modes on the fly:
-- Copy mode when working with AI
-- IDE mode when you want to edit manually
-- Copy+Open to do both
-
-<img src="https://cdn.jsdelivr.net/gh/zh-lx/static-img/code-inspector/console-success.png" width="700px" />
-
-## 👨‍💻 Contributors
-
-Special thanks to the contributors of this project:<br />
-
-<img src="https://contrib.rocks/image?repo=zh-lx/code-inspector" height="40" />
-
-## 🔧 For Maintainers
-
-If you're a contributor or maintainer, see the [Maintenance Guide](./docs/MAINTENANCE.md) for:
-- Publishing to private registries (Cloudsmith)
-- Release workflows
-- Development setup
-- Testing procedures
-
-## 📧 Communication and Feedback
-
-For any usage issues, please leave a message below my [Twitter](https://twitter.com/zhulxing312147) post or [submit an issue](https://github.com/zh-lx/code-inspector/issues) on Github.
-
-For Chinese users, you can join the QQ group `769748484` or add the author's WeiXin account `zhoulx1688888` for consultation and feedback:
-
-<div style="display: flex; column-gap: 16px; row-gap: 16px; flex-wrap: wrap;">
-  <img src="https://cdn.jsdelivr.net/gh/zh-lx/static-img/code-inspector/qq-group.png" width="200" height="272" />
-  <img src="https://cdn.jsdelivr.net/gh/zh-lx/static-img/code-inspector/wx-group.jpg" width="200" height="272" />
-  <img src="https://cdn.jsdelivr.net/gh/zh-lx/static-img/code-inspector/wx-qrcode.jpg" width="200" height="272" />
-</div>
-
-## 💖 Sponsor
-
-Sponsoring this project can help the author create better. If you are willing, thanks for sponsoring me through [here](https://inspector.fe-dev.cn/en/more/sponsor.html).
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=zh-lx/code-inspector&type=Date)](https://www.star-history.com/#zh-lx/code-inspector&Date)
+**Built for developers who believe AI should know exactly where the code is.** 🚀
