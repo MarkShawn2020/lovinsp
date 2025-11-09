@@ -9,3 +9,4 @@ dist.zip
 .idea
 coverage
 deploy.sh
+*.tgz
