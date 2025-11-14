@@ -100,8 +100,7 @@ export declare class CodeInspectorComponent extends LitElement {
     preUserSelect: string;
     sendType: 'xhr' | 'img';
     activeNode: ActiveNode;
-    currentTriggeredAction: InspectorAction | null;
-    layerPanelMode: InspectorAction | null;
+    currentMode: InspectorAction | null;
     inspectorSwitchRef: HTMLDivElement;
     codeInspectorContainerRef: HTMLDivElement;
     elementInfoRef: HTMLDivElement;
@@ -139,7 +138,7 @@ export declare class CodeInspectorComponent extends LitElement {
         y: number;
     }) => void;
     removeLayerPanel: () => void;
-    handleLayerPanelKeyChange: (e: KeyboardEvent) => void;
+    handleGlobalKeyChange: (e: KeyboardEvent) => void;
     addGlobalCursorStyle: () => void;
     removeGlobalCursorStyle: () => void;
     sendXHR: () => void;
@@ -162,7 +161,6 @@ export declare class CodeInspectorComponent extends LitElement {
     handleContextMenu: (e: MouseEvent) => void;
     generateNodeTree: (nodePath: HTMLElement[]) => TreeNode;
     handlePointerDown: (e: PointerEvent) => void;
-    handleOverlayKeyChange: (e: KeyboardEvent) => void;
     handleKeyUp: (e: KeyboardEvent) => void;
     printTip: () => void;
     getMousePosition: (e: MouseEvent | TouchEvent) => {

@@ -168,9 +168,7 @@ export class CodeInspectorComponent extends LitElement {
   @state()
   activeNode: ActiveNode = {};
   @state()
-  currentTriggeredAction: InspectorAction | null = null; // 当前触发的操作模式
-  @state()
-  layerPanelMode: InspectorAction | null = null; // 图层面板当前模式（基于键盘状态）
+  currentMode: InspectorAction | null = null; // 全局共享的当前操作模式（基于键盘状态）
 
   @query('#inspector-switch')
   inspectorSwitchRef!: HTMLDivElement;
@@ -541,42 +539,31 @@ export class CodeInspectorComponent extends LitElement {
     this.nodeTreePosition = position;
     this.nodeTree = nodeTree;
     this.showNodeTree = true;
-
-    // 初始化图层面板模式（默认为 copy）
-    if (this.hasModeSpecificKeys()) {
-      this.layerPanelMode = this.copy ? 'copy' : (this.locate ? 'locate' : (this.target ? 'target' : null));
-    } else {
-      const defaultMode = this.getDefaultAction();
-      this.layerPanelMode = defaultMode === 'none' ? null : (defaultMode as InspectorAction);
-    }
   };
 
   removeLayerPanel = () => {
     this.showNodeTree = false;
     this.nodeTree = null;
     this.activeNode = {};
-    this.layerPanelMode = null;
   };
 
-  // 图层面板键盘监听：动态检测快捷键组合状态
-  handleLayerPanelKeyChange = (e: KeyboardEvent) => {
-    if (!this.showNodeTree) return;
-
+  // 全局键盘监听器：统一更新当前模式状态
+  handleGlobalKeyChange = (e: KeyboardEvent) => {
     if (this.hasModeSpecificKeys()) {
-      // 新系统：使用完整的模式检测逻辑（与主覆盖层保持一致）
+      // 新系统：使用完整的模式检测逻辑
       const triggeredMode = this.getTriggeredAction(e);
 
       if (triggeredMode) {
-        this.layerPanelMode = triggeredMode;
+        this.currentMode = triggeredMode;
       } else {
         // 如果没有快捷键匹配，回退到默认模式
         const defaultMode = this.getDefaultAction();
-        this.layerPanelMode = defaultMode === 'none' ? null : (defaultMode as InspectorAction);
+        this.currentMode = defaultMode === 'none' ? null : (defaultMode as InspectorAction);
       }
     } else {
       // 旧系统：使用默认模式
       const defaultMode = this.getDefaultAction();
-      this.layerPanelMode = defaultMode === 'none' ? null : (defaultMode as InspectorAction);
+      this.currentMode = defaultMode === 'none' ? null : (defaultMode as InspectorAction);
     }
   };
 
@@ -920,11 +907,6 @@ export class CodeInspectorComponent extends LitElement {
       ((this.isTracking(e) && !this.dragging) || this.open) &&
       !this.hoverSwitch
     ) {
-      // 更新当前触发的操作模式
-      if (this.hasModeSpecificKeys()) {
-        this.currentTriggeredAction = this.getTriggeredAction(e);
-      }
-
       const nodePath = e.composedPath() as HTMLElement[];
       let targetNode;
       // 寻找第一个有 data-insp-path 属性的元素
@@ -953,7 +935,6 @@ export class CodeInspectorComponent extends LitElement {
         this.removeCover();
       }
     } else {
-      this.currentTriggeredAction = null;
       this.removeCover();
     }
   };
@@ -967,14 +948,8 @@ export class CodeInspectorComponent extends LitElement {
         // 阻止默认事件
         e.preventDefault();
 
-        // 使用新的模式系统或回退到旧系统
-        let actionToExecute: InspectorAction | ResolvedAction;
-        if (this.hasModeSpecificKeys()) {
-          const triggered = this.getTriggeredAction(e);
-          actionToExecute = triggered || (this.open ? this.getDefaultAction() : 'none');
-        } else {
-          actionToExecute = this.getDefaultAction();
-        }
+        // 使用全局共享的当前模式
+        const actionToExecute = this.currentMode || this.getDefaultAction();
 
         if (actionToExecute !== 'none') {
           this.trackCode(actionToExecute as InspectorAction);
@@ -997,14 +972,6 @@ export class CodeInspectorComponent extends LitElement {
       !this.hoverSwitch
     ) {
       e.preventDefault();
-
-      // Capture the current triggered mode at right-click time
-      if (this.hasModeSpecificKeys()) {
-        this.layerPanelMode = this.getTriggeredAction(e);
-      } else {
-        const defaultMode = this.getDefaultAction();
-        this.layerPanelMode = defaultMode === 'none' ? null : (defaultMode as InspectorAction);
-      }
 
       const nodePath = e.composedPath() as HTMLElement[];
       const nodeTree = this.generateNodeTree(nodePath);
@@ -1068,20 +1035,6 @@ export class CodeInspectorComponent extends LitElement {
         if (this.autoToggle) {
           this.open = false;
         }
-      }
-    }
-  };
-
-  // 监听键盘变化，更新主覆盖层模式
-  handleOverlayKeyChange = (e: KeyboardEvent) => {
-    // 仅在覆盖层显示时更新模式
-    if (this.show && this.hasModeSpecificKeys()) {
-      const triggeredMode = this.getTriggeredAction(e);
-      if (triggeredMode) {
-        this.currentTriggeredAction = triggeredMode;
-      } else {
-        const defaultMode = this.getDefaultAction();
-        this.currentTriggeredAction = defaultMode === 'none' ? null : (defaultMode as InspectorAction);
       }
     }
   };
@@ -1203,10 +1156,10 @@ export class CodeInspectorComponent extends LitElement {
   handleClickTreeNode = (node: TreeNode) => {
     this.element = node;
 
-    // Layer Panel 中默认使用 locate（跳转到 IDE），除非用户按了其他快捷键
-    const actionToExecute = this.layerPanelMode || 'locate';
+    // 使用全局共享的当前模式
+    const actionToExecute = this.currentMode || this.getDefaultAction();
 
-    if (actionToExecute !== 'none' && this.isActionEnabled(actionToExecute as Exclude<InspectorAction, 'all'>)) {
+    if (actionToExecute !== 'none') {
       this.trackCode(actionToExecute as InspectorAction);
     }
     this.removeLayerPanel();
@@ -1262,12 +1215,9 @@ export class CodeInspectorComponent extends LitElement {
     window.addEventListener('click', this.handleMouseClick, true);
     window.addEventListener('pointerdown', this.handlePointerDown, true);
     window.addEventListener('keyup', this.handleKeyUp, true);
-    // Keyboard listeners for main overlay mode switching
-    window.addEventListener('keydown', this.handleOverlayKeyChange, true);
-    window.addEventListener('keyup', this.handleOverlayKeyChange, true);
-    // Keyboard listeners for layer panel mode switching
-    window.addEventListener('keydown', this.handleLayerPanelKeyChange, true);
-    window.addEventListener('keyup', this.handleLayerPanelKeyChange, true);
+    // Global keyboard listeners for unified mode state management
+    window.addEventListener('keydown', this.handleGlobalKeyChange, true);
+    window.addEventListener('keyup', this.handleGlobalKeyChange, true);
     window.addEventListener('mouseleave', this.removeCover, true);
     window.addEventListener('mouseup', this.handleMouseUp, true);
     window.addEventListener('touchend', this.handleMouseUp, true);
@@ -1282,12 +1232,9 @@ export class CodeInspectorComponent extends LitElement {
     window.removeEventListener('click', this.handleMouseClick, true);
     window.removeEventListener('pointerdown', this.handlePointerDown, true);
     window.removeEventListener('keyup', this.handleKeyUp, true);
-    // Remove main overlay keyboard listeners
-    window.removeEventListener('keydown', this.handleOverlayKeyChange, true);
-    window.removeEventListener('keyup', this.handleOverlayKeyChange, true);
-    // Remove layer panel keyboard listeners
-    window.removeEventListener('keydown', this.handleLayerPanelKeyChange, true);
-    window.removeEventListener('keyup', this.handleLayerPanelKeyChange, true);
+    // Remove global keyboard listeners
+    window.removeEventListener('keydown', this.handleGlobalKeyChange, true);
+    window.removeEventListener('keyup', this.handleGlobalKeyChange, true);
     window.removeEventListener('mouseleave', this.removeCover, true);
     window.removeEventListener('mouseup', this.handleMouseUp, true);
     window.removeEventListener('touchend', this.handleMouseUp, true);
@@ -1309,8 +1256,8 @@ export class CodeInspectorComponent extends LitElement {
   `;
 
   render() {
-    // Get mode-specific styling
-    const currentMode = this.currentTriggeredAction || this.getDefaultAction();
+    // Get mode-specific styling (unified global mode state)
+    const currentMode = this.currentMode || this.getDefaultAction();
     const modeColors = this.getModeColors(currentMode);
     const modeIcon = this.getModeIcon(currentMode);
 
@@ -1362,10 +1309,9 @@ export class CodeInspectorComponent extends LitElement {
       /mac|iphone|ipad|ipod/i.test(navigator.userAgent);
     const hotKeyMap = isMac ? MacHotKeyMap : WindowsHotKeyMap;
 
-    // Layer panel mode-aware styling
-    const layerPanelMode = this.layerPanelMode || this.getDefaultAction();
-    const layerPanelColors = this.getModeColors(layerPanelMode);
-    const layerPanelIcon = this.getModeIcon(layerPanelMode);
+    // Layer panel uses the same global mode state
+    const layerPanelColors = this.getModeColors(currentMode);
+    const layerPanelIcon = this.getModeIcon(currentMode);
 
     // Generate mode hints for layer panel (same as main overlay)
     const layerPanelModeHints: Array<{hotkey: string, action: string}> = [];
@@ -1574,7 +1520,7 @@ export class CodeInspectorComponent extends LitElement {
       </div>
       <div
         id="inspector-node-tree"
-        class="element-info-content layer-panel-mode-${layerPanelMode || 'default'}"
+        class="element-info-content layer-panel-mode-${currentMode || 'default'}"
         style=${styleMap(nodeTreeStyles)}
       >
         <div
@@ -1590,7 +1536,7 @@ export class CodeInspectorComponent extends LitElement {
         >
           <div class="layer-title-content">
             <span class="layer-mode-icon">${layerPanelIcon}</span>
-            <span class="layer-mode-text">${this.getActionLabel(layerPanelMode)}</span>
+            <span class="layer-mode-text">${this.getActionLabel(currentMode)}</span>
           </div>
           ${html`<svg
             xmlns="http://www.w3.org/2000/svg"
