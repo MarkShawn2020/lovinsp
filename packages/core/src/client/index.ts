@@ -1615,7 +1615,6 @@ export class CodeInspectorComponent extends LitElement {
           style="${styleMap({ pointerEvents: this.dragging ? 'none' : '' })}"
         >
           ${this.nodeTree ? this.renderNodeTree(this.nodeTree) : ''}
-          <div style="height: 8px"></div>
         </div>
 
         <!-- Brand footer with mode hints -->
@@ -1919,40 +1918,56 @@ export class CodeInspectorComponent extends LitElement {
       }
 
       .node-tree-list {
-        flex: 1;
+        height: fit-content;
         overflow-y: auto;
+        padding: 12px;
         min-height: 100px;
         max-height: 400px;
+        background: #F9F9F7;
       }
 
       .inspector-layer {
         cursor: pointer;
         position: relative;
-        padding-right: 8px;
+        padding: 8px 12px;
+        margin-bottom: 2px;
+        border-radius: 0.375rem;
+        font-size: 12px;
+        line-height: 1.5;
         transition: all 0.2s ease-in-out;
+
         &:hover {
           background: rgba(0, 0, 0, 0.03);
           transform: translateX(2px);
         }
+
         &:focus-visible {
           outline: 2px solid #D97757;
           outline-offset: 2px;
-          border-radius: 4px;
+          border-radius: 0.375rem;
+        }
+
+        &:active {
+          background: rgba(0, 0, 0, 0.05);
         }
       }
 
       .element-tip {
-        font-size: 9px;
-        opacity: 0.6;
+        font-size: 10px;
+        opacity: 0.7;
         color: #87867F;
-        margin-left: 6px;
+        margin-left: 8px;
+        font-weight: 400;
+        line-height: 1.5;
       }
 
       .path-line {
-        font-size: 9px;
+        font-size: 10px;
         color: #87867F;
-        margin-top: 1px;
+        margin-top: 4px;
+        line-height: 1.5;
         font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        opacity: 0.8;
       }
     }
 
@@ -1960,14 +1975,16 @@ export class CodeInspectorComponent extends LitElement {
       position: fixed;
       box-sizing: border-box;
       z-index: 999999999999999999;
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(24, 24, 24, 0.9);
       color: white;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 0.375rem;
+      font-size: 11px;
+      line-height: 1.5;
       white-space: wrap;
       pointer-events: none;
       word-break: break-all;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
     }
     .tooltip-top {
       transform: translateY(-100%);
