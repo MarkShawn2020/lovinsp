@@ -1461,9 +1461,8 @@ export class CodeInspectorComponent extends LitElement {
                     </div>
                   `)}
                 </div>
-              ` : html`
-                <small>Code Inspector</small>
-              `}
+              ` : ''}
+              <small>Code Inspector</small>
             </div>
           </div>
         </div>
@@ -1637,9 +1636,8 @@ export class CodeInspectorComponent extends LitElement {
                 </div>
               `)}
             </div>
-          ` : html`
-            <small>Code Inspector</small>
-          `}
+          ` : ''}
+          <small>Code Inspector</small>
         </div>
       </div>
       <div
@@ -1743,8 +1741,12 @@ export class CodeInspectorComponent extends LitElement {
       }
 
       .mode-hints {
-        padding: 8px 10px;
+        padding: 8px 10px 4px 10px;
         background: transparent;
+      }
+
+      .mode-hints + small {
+        padding-top: 0;
       }
 
       .mode-hint-item {
