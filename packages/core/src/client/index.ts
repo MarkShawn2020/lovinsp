@@ -1374,25 +1374,21 @@ export class CodeInspectorComponent extends LitElement {
       /mac|iphone|ipad|ipod/i.test(navigator.userAgent);
     const hotKeyMap = isMac ? MacHotKeyMap : WindowsHotKeyMap;
 
-    // Generate hint text based on mode system
-    let modeTipText = '';
+    // Generate structured mode hints for multi-line display
+    const modeHints: Array<{hotkey: string, action: string}> = [];
     if (this.hasModeSpecificKeys()) {
-      const hints: string[] = [];
       if (this.copyKeys && this.copy) {
         const keys = this.copyKeys.split(',').map(k => hotKeyMap[k.trim() as keyof typeof hotKeyMap]).join('+');
-        hints.push(`${keys}=Copy`);
+        modeHints.push({ hotkey: keys, action: 'Copy Path' });
       }
       if (this.locateKeys && this.locate) {
         const keys = this.locateKeys.split(',').map(k => hotKeyMap[k.trim() as keyof typeof hotKeyMap]).join('+');
-        hints.push(`${keys}=IDE`);
+        modeHints.push({ hotkey: keys, action: 'Open in IDE' });
       }
       if (this.targetKeys && this.target) {
         const keys = this.targetKeys.split(',').map(k => hotKeyMap[k.trim() as keyof typeof hotKeyMap]).join('+');
-        hints.push(`${keys}=Link`);
+        modeHints.push({ hotkey: keys, action: 'Open Target' });
       }
-      modeTipText = hints.join(' · ');
-    } else {
-      modeTipText = `Mode: ${modeLabel}`;
     }
 
     return html`
@@ -1430,13 +1426,28 @@ export class CodeInspectorComponent extends LitElement {
             <div class="name-line">
               <div class="element-name">
                 <span class="element-title" style="color: ${modeColors.accent}">&lt;${this.element.name}&gt;</span>
-                <span class="element-tip">
-                  ${modeTipText}
-                </span>
               </div>
             </div>
+            ${modeHints.length > 0 ? html`
+              <div class="mode-hints" role="list" aria-label="Available keyboard shortcuts">
+                ${modeHints.map(hint => html`
+                  <div class="mode-hint-item" role="listitem">
+                    <span class="hotkey">${hint.hotkey}</span>
+                    <span class="separator">=</span>
+                    <span class="action">${hint.action}</span>
+                  </div>
+                `)}
+              </div>
+            ` : html`
+              <div class="mode-hints-legacy">
+                <span class="element-tip">Mode: ${modeLabel}</span>
+              </div>
+            `}
             <div class="path-line">
               ${this.element.path}:${this.element.line}:${this.element.column}
+            </div>
+            <div class="brand-footer">
+              <small>Code Inspector</small>
             </div>
           </div>
         </div>
@@ -1561,6 +1572,7 @@ export class CodeInspectorComponent extends LitElement {
             <span class="layer-mode-text">${this.getActionLabel(layerPanelMode)}</span>
             <span class="layer-hint">Click node to ${layerPanelMode === 'copy' ? 'copy' : layerPanelMode === 'locate' ? 'open' : 'trigger'}</span>
           </div>
+          <div class="brand-mark">CI</div>
           ${html`<svg
             xmlns="http://www.w3.org/2000/svg"
             width="16"
@@ -1672,6 +1684,54 @@ export class CodeInspectorComponent extends LitElement {
     }
     .path-line {
       padding: 0 10px 6px;
+    }
+    .brand-footer {
+      padding: 4px 10px;
+      font-size: 9px;
+      color: rgba(107, 114, 128, 0.7);
+      border-top: 1px solid rgba(0, 0, 0, 0.05);
+      text-align: center;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      background: rgba(249, 250, 251, 0.8);
+    }
+    .brand-footer small {
+      font-size: inherit;
+    }
+    .mode-hints {
+      padding: 6px 10px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      background: rgba(249, 250, 251, 0.5);
+    }
+    .mode-hint-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+      line-height: 1.8;
+      margin: 1px 0;
+    }
+    .mode-hint-item .hotkey {
+      color: #00B42A;
+      font-weight: 600;
+      font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Consolas', monospace;
+      letter-spacing: 0.3px;
+    }
+    .mode-hint-item .separator {
+      margin: 0 6px;
+      color: #999;
+      font-weight: 400;
+    }
+    .mode-hint-item .action {
+      color: #666;
+      font-weight: 500;
+      flex: 1;
+      text-align: right;
+    }
+    .mode-hints-legacy {
+      padding: 4px 10px;
+      font-size: 10px;
+      color: #006aff;
     }
     .element-info-top {
       top: -4px;
@@ -1785,6 +1845,17 @@ export class CodeInspectorComponent extends LitElement {
           font-weight: 400;
           font-size: 10px;
           margin-left: 4px;
+        }
+
+        .brand-mark {
+          font-size: 10px;
+          font-weight: 700;
+          padding: 2px 6px;
+          border-radius: 3px;
+          background: rgba(255, 255, 255, 0.2);
+          opacity: 0.8;
+          letter-spacing: 1px;
+          margin: 0 6px;
         }
 
         .close-icon {
