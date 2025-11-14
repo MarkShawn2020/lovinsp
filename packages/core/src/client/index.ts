@@ -1264,11 +1264,19 @@ export class CodeInspectorComponent extends LitElement {
         // 延迟一点启动，确保滚动开始
         setTimeout(() => blink(), 100);
 
-        // 在控制台打印元素引用（可以右键 "Reveal in Elements panel"）
-        console.log('%c[Code Inspector] Element:', 'color: #D97757; font-weight: bold;', node.element);
-        console.log('%cTip: Right-click the element above and select "Reveal in Elements panel"', 'color: #87867F; font-style: italic;');
+        // 将元素保存到全局变量，方便在 Console 中使用
+        (window as any).$inspectElement = node.element;
 
-        this.showNotification('Element highlighted and logged to console', 'success');
+        // 在控制台打印元素和使用说明
+        console.log('%c[Code Inspector] Element stored in window.$inspectElement', 'color: #D97757; font-weight: bold; font-size: 14px;');
+        console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #E8E6DC;');
+        console.log('%c📍 To reveal in Elements panel, execute:', 'color: #181818; font-weight: 600;');
+        console.log('%c   inspect($inspectElement)', 'color: #00B42A; font-family: monospace; font-size: 13px; background: #F0EEE6; padding: 4px 8px; border-radius: 4px;');
+        console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #E8E6DC;');
+        console.log('%cElement reference:', 'color: #87867F; font-size: 12px;', node.element);
+        console.log('%c💡 Tip: Type the green command above in this console and press Enter', 'color: #87867F; font-style: italic; font-size: 11px;');
+
+        this.showNotification('Element highlighted. Check console for inspect command', 'success');
       }
 
       this.removeLayerPanel();
