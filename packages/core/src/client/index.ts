@@ -1447,26 +1447,23 @@ export class CodeInspectorComponent extends LitElement {
                 <span class="element-title" style="color: ${modeColors.accent}">&lt;${this.element.name}&gt;</span>
               </div>
             </div>
-            ${modeHints.length > 0 ? html`
-              <div class="mode-hints" role="list" aria-label="Available keyboard shortcuts">
-                ${modeHints.map(hint => html`
-                  <div class="mode-hint-item" role="listitem">
-                    <span class="hotkey">${hint.hotkey}</span>
-                    <span class="separator">=</span>
-                    <span class="action">${hint.action}</span>
-                  </div>
-                `)}
-              </div>
-            ` : html`
-              <div class="mode-hints-legacy">
-                <span class="element-tip">Mode: ${modeLabel}</span>
-              </div>
-            `}
             <div class="path-line">
               ${this.element.path}:${this.element.line}:${this.element.column}
             </div>
             <div class="brand-footer">
-              <small>Code Inspector</small>
+              ${modeHints.length > 0 ? html`
+                <div class="mode-hints" role="list" aria-label="Available keyboard shortcuts">
+                  ${modeHints.map(hint => html`
+                    <div class="mode-hint-item" role="listitem">
+                      <span class="hotkey">${hint.hotkey}</span>
+                      <span class="separator">=</span>
+                      <span class="action">${hint.action}</span>
+                    </div>
+                  `)}
+                </div>
+              ` : html`
+                <small>Code Inspector</small>
+              `}
             </div>
           </div>
         </div>
@@ -1732,52 +1729,52 @@ export class CodeInspectorComponent extends LitElement {
       padding: 0 10px 6px;
     }
     .brand-footer {
-      padding: 4px 10px;
-      font-size: 9px;
-      color: rgba(107, 114, 128, 0.7);
       border-top: 1px solid rgba(0, 0, 0, 0.05);
-      text-align: center;
-      font-weight: 500;
-      letter-spacing: 0.5px;
       background: rgba(249, 250, 251, 0.8);
-    }
-    .brand-footer small {
-      font-size: inherit;
-    }
-    .mode-hints {
-      padding: 6px 10px;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-      background: rgba(249, 250, 251, 0.5);
-    }
-    .mode-hint-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 10px;
-      line-height: 1.8;
-      margin: 1px 0;
-    }
-    .mode-hint-item .hotkey {
-      color: #00B42A;
-      font-weight: 600;
-      font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Consolas', monospace;
-      letter-spacing: 0.3px;
-    }
-    .mode-hint-item .separator {
-      margin: 0 6px;
-      color: #999;
-      font-weight: 400;
-    }
-    .mode-hint-item .action {
-      color: #666;
-      font-weight: 500;
-      flex: 1;
-      text-align: right;
-    }
-    .mode-hints-legacy {
-      padding: 4px 10px;
-      font-size: 10px;
-      color: #006aff;
+
+      small {
+        display: block;
+        padding: 4px 10px;
+        font-size: 9px;
+        color: rgba(107, 114, 128, 0.7);
+        text-align: center;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+      }
+
+      .mode-hints {
+        padding: 8px 10px;
+        background: transparent;
+      }
+
+      .mode-hint-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 10px;
+        line-height: 1.8;
+        margin: 1px 0;
+
+        .hotkey {
+          color: #00B42A;
+          font-weight: 600;
+          font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Consolas', monospace;
+          letter-spacing: 0.3px;
+        }
+
+        .separator {
+          margin: 0 6px;
+          color: #999;
+          font-weight: 400;
+        }
+
+        .action {
+          color: #666;
+          font-weight: 500;
+          flex: 1;
+          text-align: right;
+        }
+      }
     }
     .element-info-top {
       top: -4px;
