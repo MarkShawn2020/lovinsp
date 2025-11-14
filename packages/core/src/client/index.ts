@@ -1200,7 +1200,26 @@ export class CodeInspectorComponent extends LitElement {
     this.moved = false;
   };
 
-  handleClickTreeNode = (node: TreeNode) => {
+  handleClickTreeNode = (e: MouseEvent, node: TreeNode) => {
+    // 如果按住 Ctrl (Windows) 或 Cmd (Mac)，在 DevTools 中检查元素
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // 使用浏览器的 inspect() 函数在 DevTools Elements 面板中定位元素
+      if (node.element && typeof (window as any).inspect === 'function') {
+        (window as any).inspect(node.element);
+        this.showNotification('Element inspected in DevTools', 'success');
+      } else if (node.element) {
+        // 降级方案：在控制台输出元素
+        console.log('Element:', node.element);
+        this.showNotification('Element logged to console (open DevTools)', 'success');
+      }
+
+      this.removeLayerPanel();
+      return;
+    }
+
     this.element = node;
 
     // 使用图层面板的当前模式（基于键盘状态）
@@ -1301,7 +1320,7 @@ export class CodeInspectorComponent extends LitElement {
       @mouseenter="${async (e: MouseEvent) =>
         await this.handleMouseEnterNode(e, node)}"
       @mouseleave="${this.handleMouseLeaveNode}"
-      @click="${() => this.handleClickTreeNode(node)}"
+      @click="${(e: MouseEvent) => this.handleClickTreeNode(e, node)}"
     >
       &lt;${node.name}&gt;
     </div>
