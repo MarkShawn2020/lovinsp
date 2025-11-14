@@ -1214,19 +1214,37 @@ export class CodeInspectorComponent extends LitElement {
           inline: 'center'
         });
 
-        // 临时高亮元素（闪烁效果）
-        const originalOutline = node.element.style.outline;
-        const originalOutlineOffset = node.element.style.outlineOffset;
+        // 临时高亮元素（闪烁效果）- 使用 setProperty 确保优先级
+        const element = node.element as HTMLElement;
+        const originalOutline = element.style.getPropertyValue('outline');
+        const originalOutlineOffset = element.style.getPropertyValue('outline-offset');
+        const originalZIndex = element.style.getPropertyValue('z-index');
+
         const highlightElement = () => {
-          node.element.style.outline = '3px solid #D97757';
-          node.element.style.outlineOffset = '2px';
-        };
-        const removeHighlight = () => {
-          node.element.style.outline = originalOutline;
-          node.element.style.outlineOffset = originalOutlineOffset;
+          element.style.setProperty('outline', '4px solid #D97757', 'important');
+          element.style.setProperty('outline-offset', '3px', 'important');
+          element.style.setProperty('z-index', '999999', 'important');
         };
 
-        // 闪烁动画：3次
+        const removeHighlight = () => {
+          if (originalOutline) {
+            element.style.setProperty('outline', originalOutline);
+          } else {
+            element.style.removeProperty('outline');
+          }
+          if (originalOutlineOffset) {
+            element.style.setProperty('outline-offset', originalOutlineOffset);
+          } else {
+            element.style.removeProperty('outline-offset');
+          }
+          if (originalZIndex) {
+            element.style.setProperty('z-index', originalZIndex);
+          } else {
+            element.style.removeProperty('z-index');
+          }
+        };
+
+        // 闪烁动画：3次（6个状态变化）
         let count = 0;
         const blink = () => {
           if (count < 6) {
@@ -1236,10 +1254,15 @@ export class CodeInspectorComponent extends LitElement {
               removeHighlight();
             }
             count++;
-            setTimeout(blink, 200);
+            setTimeout(blink, 250);
+          } else {
+            // 确保最后移除高亮
+            removeHighlight();
           }
         };
-        blink();
+
+        // 延迟一点启动，确保滚动开始
+        setTimeout(() => blink(), 100);
 
         // 在控制台打印元素引用（可以右键 "Reveal in Elements panel"）
         console.log('%c[Code Inspector] Element:', 'color: #D97757; font-weight: bold;', node.element);
