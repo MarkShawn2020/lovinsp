@@ -1353,6 +1353,23 @@ export class CodeInspectorComponent extends LitElement {
     const layerPanelColors = this.getModeColors(layerPanelMode);
     const layerPanelIcon = this.getModeIcon(layerPanelMode);
 
+    // Generate mode hints for layer panel (same as main overlay)
+    const layerPanelModeHints: Array<{hotkey: string, action: string}> = [];
+    if (this.hasModeSpecificKeys()) {
+      if (this.copyKeys && this.copy) {
+        const keys = this.copyKeys.split(',').map(k => hotKeyMap[k.trim() as keyof typeof hotKeyMap]).join('+');
+        layerPanelModeHints.push({ hotkey: keys, action: 'Copy Path' });
+      }
+      if (this.locateKeys && this.locate) {
+        const keys = this.locateKeys.split(',').map(k => hotKeyMap[k.trim() as keyof typeof hotKeyMap]).join('+');
+        layerPanelModeHints.push({ hotkey: keys, action: 'Open in IDE' });
+      }
+      if (this.targetKeys && this.target) {
+        const keys = this.targetKeys.split(',').map(k => hotKeyMap[k.trim() as keyof typeof hotKeyMap]).join('+');
+        layerPanelModeHints.push({ hotkey: keys, action: 'Open Target' });
+      }
+    }
+
     const nodeTreeStyles = {
       display: this.showNodeTree ? 'flex' : 'none',
       borderLeft: `4px solid ${layerPanelColors.accent}`,
@@ -1591,12 +1608,44 @@ export class CodeInspectorComponent extends LitElement {
           </svg>`}
         </div>
 
+        <!-- Element info section (reuse from left-click overlay) -->
+        <div class="layer-panel-element-info">
+          <div class="name-line">
+            <div class="element-name">
+              <span class="element-title" style="color: ${layerPanelColors.accent}">&lt;${this.element.name}&gt;</span>
+            </div>
+          </div>
+          ${layerPanelModeHints.length > 0 ? html`
+            <div class="mode-hints" role="list" aria-label="Available keyboard shortcuts">
+              ${layerPanelModeHints.map(hint => html`
+                <div class="mode-hint-item" role="listitem">
+                  <span class="hotkey">${hint.hotkey}</span>
+                  <span class="separator">=</span>
+                  <span class="action">${hint.action}</span>
+                </div>
+              `)}
+            </div>
+          ` : html`
+            <div class="mode-hints-legacy">
+              <span class="element-tip">Mode: ${this.getActionLabel(layerPanelMode)}</span>
+            </div>
+          `}
+          <div class="path-line">
+            ${this.element.path}:${this.element.line}:${this.element.column}
+          </div>
+        </div>
+
         <div
           class="node-tree-list"
           style="${styleMap({ pointerEvents: this.dragging ? 'none' : '' })}"
         >
           ${this.nodeTree ? this.renderNodeTree(this.nodeTree) : ''}
           <div style="height: 8px"></div>
+        </div>
+
+        <!-- Brand footer (reuse from left-click overlay) -->
+        <div class="brand-footer">
+          <small>Code Inspector</small>
         </div>
       </div>
       <div
@@ -1800,6 +1849,7 @@ export class CodeInspectorComponent extends LitElement {
       z-index: 9999999999999999;
       min-width: 300px;
       max-width: min(max(30vw, 300px), 400px);
+      max-height: calc(100vh - 40px);
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
         'Liberation Mono', 'Courier New', monospace;
       display: flex;
@@ -1867,10 +1917,47 @@ export class CodeInspectorComponent extends LitElement {
         }
       }
 
+      .layer-panel-element-info {
+        flex-shrink: 0;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        background: #fff;
+
+        .name-line {
+          padding: 8px 12px 4px;
+        }
+
+        .element-name {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .element-title {
+          font-weight: bold;
+          font-size: 13px;
+          transition: color 0.2s ease-in-out;
+        }
+
+        .mode-hints {
+          padding: 6px 12px;
+          background: rgba(249, 250, 251, 0.5);
+          border-top: 1px solid rgba(0, 0, 0, 0.05);
+          border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .path-line {
+          padding: 4px 12px 8px;
+          font-size: 10px;
+          color: #666;
+          font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        }
+      }
+
       .node-tree-list {
         flex: 1;
         overflow-y: auto;
-        min-height: 0;
+        min-height: 100px;
+        max-height: 400px;
       }
 
       .inspector-layer {
