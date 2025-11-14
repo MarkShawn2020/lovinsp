@@ -3,6 +3,7 @@ import { property, query, state } from 'lit/decorators.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { PathName, DefaultPort } from '../shared';
 import { formatOpenPath } from 'launch-ide';
+import { DesignTokens, getModeColors as getTokenModeColors } from '../shared/design-tokens';
 
 const styleId = '__code-inspector-unique-id';
 const AstroFile = 'data-astro-source-file';
@@ -739,41 +740,48 @@ export class CodeInspectorComponent extends LitElement {
     badge: string;
     badgeText: string;
   } {
+    const { colors } = DesignTokens;
+
     switch (mode) {
       case 'copy':
+        // Claude fig (purple) - warm, creative
         return {
-          overlay: 'rgba(0, 106, 255, 0.6)',      // Blue - copy action
-          accent: '#006AFF',
-          badge: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          badgeText: '#ffffff'
+          overlay: colors.mode.copy.light,
+          accent: colors.mode.copy.accent,
+          badge: colors.mode.copy.base,
+          badgeText: colors.text.white
         };
       case 'locate':
+        // Claude cactus (green) - stable, reliable
         return {
-          overlay: 'rgba(0, 180, 42, 0.6)',       // Green - IDE action
-          accent: '#00B42A',
-          badge: 'linear-gradient(135deg, #00B42A 0%, #00875A 100%)',
-          badgeText: '#ffffff'
+          overlay: colors.mode.locate.light,
+          accent: colors.mode.locate.accent,
+          badge: colors.mode.locate.base,
+          badgeText: colors.text.white
         };
       case 'target':
+        // Claude sky (blue) - open, clear
         return {
-          overlay: 'rgba(245, 63, 63, 0.6)',      // Red - target link
-          accent: '#F53F3F',
-          badge: 'linear-gradient(135deg, #F7BA1E 0%, #F77234 100%)',
-          badgeText: '#ffffff'
+          overlay: colors.mode.target.light,
+          accent: colors.mode.target.accent,
+          badge: colors.mode.target.base,
+          badgeText: colors.text.white
         };
       case 'all':
+        // Primary brand color
         return {
-          overlay: 'rgba(168, 85, 247, 0.6)',     // Purple - all actions
-          accent: '#A855F7',
-          badge: 'linear-gradient(135deg, #A855F7 0%, #7C3AED 100%)',
-          badgeText: '#ffffff'
+          overlay: 'rgba(217, 119, 87, 0.15)',
+          accent: '#C66E52',
+          badge: colors.primary,
+          badgeText: colors.text.white
         };
       default:
+        // Neutral default using Claude's soft palette
         return {
-          overlay: 'rgba(120, 170, 210, 0.7)',    // Default blue
-          accent: '#78AAD2',
-          badge: '#E5E7EB',
-          badgeText: '#6B7280'
+          overlay: colors.background.overlay,
+          accent: colors.text.faded,
+          badge: colors.border.default,
+          badgeText: colors.text.main
         };
     }
   }
@@ -1690,26 +1698,27 @@ export class CodeInspectorComponent extends LitElement {
     .element-info-content {
       max-width: 100%;
       font-size: 12px;
-      color: #000;
-      background-color: #fff;
+      color: #181818;
+      background-color: #F9F9F7;
       word-break: break-all;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
       box-sizing: border-box;
       padding: 0;
-      border-radius: 6px;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(0, 0, 0, 0.05);
       overflow: hidden;
     }
     .mode-badge {
       display: flex;
       align-items: center;
       gap: 6px;
-      padding: 6px 10px;
+      padding: 8px 12px;
       font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.3px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
       text-transform: uppercase;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-      transition: background 0.2s ease-in-out;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      transition: background 0.2s ease-in-out, border-color 0.2s ease-in-out;
     }
     .mode-icon {
       font-size: 14px;
@@ -1726,13 +1735,14 @@ export class CodeInspectorComponent extends LitElement {
     }
     .brand-footer {
       border-top: 1px solid rgba(0, 0, 0, 0.05);
-      background: rgba(249, 250, 251, 0.8);
+      background: rgba(240, 238, 230, 0.6);
 
       small {
         display: block;
         padding: 4px 10px;
         font-size: 9px;
-        color: rgba(107, 114, 128, 0.7);
+        color: #87867F;
+        opacity: 0.8;
         text-align: center;
         font-weight: 500;
         letter-spacing: 0.5px;
@@ -1764,15 +1774,16 @@ export class CodeInspectorComponent extends LitElement {
 
         .separator {
           margin: 0 6px;
-          color: #999;
+          color: #87867F;
           font-weight: 400;
         }
 
         .action {
-          color: #666;
+          color: #181818;
           font-weight: 500;
           flex: 1;
           text-align: right;
+          opacity: 0.8;
         }
       }
     }
@@ -1886,17 +1897,24 @@ export class CodeInspectorComponent extends LitElement {
 
         .close-icon {
           opacity: 0.9;
-          transition: opacity 0.2s;
+          transition: all 0.2s ease-in-out;
+          cursor: pointer;
           &:hover {
             opacity: 1;
+            transform: scale(1.1);
+          }
+          &:focus-visible {
+            outline: 2px solid #D97757;
+            outline-offset: 2px;
+            border-radius: 4px;
           }
         }
       }
 
       .layer-panel-element-info {
         flex-shrink: 0;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-        background: #fff;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        background: #F9F9F7;
 
         .name-line {
           padding: 8px 12px 4px;
@@ -1917,7 +1935,7 @@ export class CodeInspectorComponent extends LitElement {
         .path-line {
           padding: 4px 12px 8px;
           font-size: 10px;
-          color: #666;
+          color: #87867F;
           font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
         }
       }
@@ -1927,7 +1945,7 @@ export class CodeInspectorComponent extends LitElement {
 
         .mode-hints {
           padding: 8px 12px;
-          background: rgba(249, 250, 251, 0.8);
+          background: rgba(240, 238, 230, 0.6);
           border-top: 1px solid rgba(0, 0, 0, 0.05);
         }
 
@@ -1935,6 +1953,8 @@ export class CodeInspectorComponent extends LitElement {
           display: block;
           padding: 4px 10px;
           text-align: center;
+          color: #87867F;
+          opacity: 0.8;
         }
       }
 
@@ -1949,21 +1969,28 @@ export class CodeInspectorComponent extends LitElement {
         cursor: pointer;
         position: relative;
         padding-right: 8px;
+        transition: all 0.2s ease-in-out;
         &:hover {
-          background: #fdf4bf;
+          background: rgba(0, 0, 0, 0.03);
+          transform: translateX(2px);
+        }
+        &:focus-visible {
+          outline: 2px solid #D97757;
+          outline-offset: 2px;
+          border-radius: 4px;
         }
       }
 
       .element-tip {
         font-size: 9px;
-        opacity: 0.5;
-        color: #999;
+        opacity: 0.6;
+        color: #87867F;
         margin-left: 6px;
       }
 
       .path-line {
         font-size: 9px;
-        color: #777;
+        color: #87867F;
         margin-top: 1px;
         font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
       }
