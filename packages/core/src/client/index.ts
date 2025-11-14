@@ -107,6 +107,8 @@ export class CodeInspectorComponent extends LitElement {
   target: string = '';
   @property()
   ip: string = 'localhost';
+  @property()
+  version: string = typeof __VERSION__ !== 'undefined' ? __VERSION__ : 'dev';
 
   @state()
   position = {
@@ -1414,7 +1416,7 @@ export class CodeInspectorComponent extends LitElement {
                   `)}
                 </div>
               ` : ''}
-              <small>Code Inspector</small>
+              <small>Code Inspector <span class="version">v${this.version}</span></small>
             </div>
           </div>
         </div>
@@ -1576,7 +1578,7 @@ export class CodeInspectorComponent extends LitElement {
               `)}
             </div>
           ` : ''}
-          <small>Code Inspector</small>
+          <small>Code Inspector <span class="version">v${this.version}</span></small>
         </div>
       </div>
       <div
@@ -1679,6 +1681,13 @@ export class CodeInspectorComponent extends LitElement {
         text-align: center;
         font-weight: 500;
         letter-spacing: 0.5px;
+
+        .version {
+          opacity: 0.6;
+          font-size: 8px;
+          margin-left: 4px;
+          font-weight: 400;
+        }
       }
 
       .mode-hints {

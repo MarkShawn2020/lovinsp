@@ -51,6 +51,7 @@ export declare class CodeInspectorComponent extends LitElement {
     defaultAction: InspectorAction;
     target: string;
     ip: string;
+    version: string;
     position: {
         top: number;
         right: number;
