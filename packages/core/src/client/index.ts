@@ -1929,11 +1929,11 @@ export class CodeInspectorComponent extends LitElement {
       .inspector-layer {
         cursor: pointer;
         position: relative;
-        padding: 8px 12px;
-        margin-bottom: 2px;
+        padding: 4px 8px;
+        margin-bottom: 1px;
         border-radius: 0.375rem;
         font-size: 12px;
-        line-height: 1.5;
+        line-height: 1.4;
         transition: all 0.2s ease-in-out;
 
         &:hover {
