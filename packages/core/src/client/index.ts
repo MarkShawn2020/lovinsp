@@ -1082,6 +1082,15 @@ export class CodeInspectorComponent extends LitElement {
     }
   };
 
+  // 切换 switch 显示/隐藏 (Alt+Shift+0)
+  handleToggleSwitchVisibility = (e: KeyboardEvent) => {
+    // Use keyCode/code for reliability across platforms (Alt+Shift+0)
+    if (e.altKey && e.shiftKey && (e.key === '0' || e.code === 'Digit0' || e.keyCode === 48)) {
+      e.preventDefault();
+      this.showSwitch = !this.showSwitch;
+    }
+  };
+
   // 打印功能提示信息
   printTip = () => {
     const agent = navigator.userAgent.toLowerCase();
@@ -1254,6 +1263,8 @@ export class CodeInspectorComponent extends LitElement {
     // Global keyboard listeners for unified mode state management
     window.addEventListener('keydown', this.handleGlobalKeyChange, true);
     window.addEventListener('keyup', this.handleGlobalKeyChange, true);
+    // Toggle switch visibility (Alt+Shift+0)
+    window.addEventListener('keydown', this.handleToggleSwitchVisibility, true);
     window.addEventListener('mouseleave', this.removeCover, true);
     window.addEventListener('mouseup', this.handleMouseUp, true);
     window.addEventListener('touchend', this.handleMouseUp, true);
@@ -1271,6 +1282,7 @@ export class CodeInspectorComponent extends LitElement {
     // Remove global keyboard listeners
     window.removeEventListener('keydown', this.handleGlobalKeyChange, true);
     window.removeEventListener('keyup', this.handleGlobalKeyChange, true);
+    window.removeEventListener('keydown', this.handleToggleSwitchVisibility, true);
     window.removeEventListener('mouseleave', this.removeCover, true);
     window.removeEventListener('mouseup', this.handleMouseUp, true);
     window.removeEventListener('touchend', this.handleMouseUp, true);
@@ -1475,94 +1487,50 @@ export class CodeInspectorComponent extends LitElement {
         @touchstart="${(e: TouchEvent) =>
           this.recordMousePosition(e, 'switch')}"
         @click="${this.switch}"
+        title="${this.open ? 'Click to disable inspector' : 'Click to enable inspector'}"
+        role="button"
+        aria-pressed="${this.open}"
+        aria-label="Code Inspector Toggle"
       >
         ${this.open
           ? html`
+              <!-- Active state: crosshair/target icon -->
               <svg
-                t="1677801709811"
-                class="icon"
-                viewBox="0 0 1024 1024"
-                version="1.1"
                 xmlns="http://www.w3.org/2000/svg"
-                p-id="1110"
-                xmlns:xlink="http://www.w3.org/1999/xlink"
-                width="1em"
-                height="1em"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
               >
-                <path
-                  d="M546.56 704H128c-19.2 0-32-12.8-32-32V256h704v194.56c10.928 1.552 21.648 3.76 32 6.832V128c0-35.2-28.8-64-64-64H128C92.8 64 64 92.8 64 128v544c0 35.2 28.8 64 64 64h425.392a221.936 221.936 0 0 1-6.848-32zM96 128c0-19.2 12.8-32 32-32h640c19.2 0 32 12.8 32 32v96H96V128z"
-                  fill="#34495E"
-                  p-id="1111"
-                ></path>
-                <path
-                  d="M416 160m-32 0a32 32 0 1 0 64 0 32 32 0 1 0-64 0Z"
-                  fill="#00B42A"
-                  p-id="1112"
-                ></path>
-                <path
-                  d="M288 160m-32 0a32 32 0 1 0 64 0 32 32 0 1 0-64 0Z"
-                  fill="#F7BA1E"
-                  p-id="1113"
-                ></path>
-                <path
-                  d="M160 160m-32 0a32 32 0 1 0 64 0 32 32 0 1 0-64 0Z"
-                  fill="#F53F3F"
-                  p-id="1114"
-                ></path>
-                <path
-                  d="M382.848 658.928l99.376-370.88 30.912 8.272-99.36 370.88zM318.368 319.2L160 477.6l158.4 158.4 22.64-22.624-135.792-135.776 135.776-135.776zM768 480c-13.088 0-25.888 1.344-38.24 3.84l6.24-6.24-158.4-158.4-22.64 22.624 135.792 135.776-135.776 135.776 22.656 22.624 2.208-2.224a190.768 190.768 0 0 0 30.928 148.08l-116.672 116.656c-10.24 10.24-10.24 26.896 0 37.136l27.76 27.76c5.12 5.12 11.84 7.68 18.56 7.68s13.456-2.56 18.56-7.68l120.992-120.96A190.56 190.56 0 0 0 768 864c105.872 0 192-86.128 192-192s-86.128-192-192-192z m-159.12 193.136c0-88.224 71.776-160 160-160 10.656 0 21.04 1.152 31.12 3.152V672c0 19.2-12.8 32-32 32h-156a160.144 160.144 0 0 1-3.12-30.864z m-68.464 263.584l-19.632-19.632 110.336-110.336c6.464 6.656 13.392 12.848 20.752 18.528l-111.456 111.44z m228.464-103.584c-65.92 0-122.576-40.096-147.056-97.136H768c35.2 0 64-28.8 64-64v-145.776c56.896 24.544 96.88 81.12 96.88 146.912 0 88.224-71.776 160-160 160z"
-                  fill="#006AFF"
-                  p-id="1115"
-                ></path>
-                <path
-                  d="M864.576 672c0 52.928-43.072 96-96 96v32a128 128 0 0 0 128-128h-32z"
-                  fill="#34495E"
-                  p-id="1116"
-                ></path>
+                <circle cx="12" cy="12" r="10"/>
+                <circle cx="12" cy="12" r="4"/>
+                <line x1="12" y1="2" x2="12" y2="6"/>
+                <line x1="12" y1="18" x2="12" y2="22"/>
+                <line x1="2" y1="12" x2="6" y2="12"/>
+                <line x1="18" y1="12" x2="22" y2="12"/>
               </svg>
             `
-          : html`<svg
-              t="1677801709811"
-              class="icon"
-              viewBox="0 0 1024 1024"
-              version="1.1"
-              xmlns="http://www.w3.org/2000/svg"
-              p-id="1110"
-              xmlns:xlink="http://www.w3.org/1999/xlink"
-              width="1em"
-              height="1em"
-            >
-              <path
-                d="M546.56 704H128c-19.2 0-32-12.8-32-32V256h704v194.56c10.928 1.552 21.648 3.76 32 6.832V128c0-35.2-28.8-64-64-64H128C92.8 64 64 92.8 64 128v544c0 35.2 28.8 64 64 64h425.392a221.936 221.936 0 0 1-6.848-32zM96 128c0-19.2 12.8-32 32-32h640c19.2 0 32 12.8 32 32v96H96V128z"
-                fill="currentColor"
-                p-id="1111"
-              ></path>
-              <path
-                d="M416 160m-32 0a32 32 0 1 0 64 0 32 32 0 1 0-64 0Z"
-                fill="currentColor"
-                p-id="1112"
-              ></path>
-              <path
-                d="M288 160m-32 0a32 32 0 1 0 64 0 32 32 0 1 0-64 0Z"
-                fill="currentColor"
-                p-id="1113"
-              ></path>
-              <path
-                d="M160 160m-32 0a32 32 0 1 0 64 0 32 32 0 1 0-64 0Z"
-                fill="currentColor"
-                p-id="1114"
-              ></path>
-              <path
-                d="M382.848 658.928l99.376-370.88 30.912 8.272-99.36 370.88zM318.368 319.2L160 477.6l158.4 158.4 22.64-22.624-135.792-135.776 135.776-135.776zM768 480c-13.088 0-25.888 1.344-38.24 3.84l6.24-6.24-158.4-158.4-22.64 22.624 135.792 135.776-135.776 135.776 22.656 22.624 2.208-2.224a190.768 190.768 0 0 0 30.928 148.08l-116.672 116.656c-10.24 10.24-10.24 26.896 0 37.136l27.76 27.76c5.12 5.12 11.84 7.68 18.56 7.68s13.456-2.56 18.56-7.68l120.992-120.96A190.56 190.56 0 0 0 768 864c105.872 0 192-86.128 192-192s-86.128-192-192-192z m-159.12 193.136c0-88.224 71.776-160 160-160 10.656 0 21.04 1.152 31.12 3.152V672c0 19.2-12.8 32-32 32h-156a160.144 160.144 0 0 1-3.12-30.864z m-68.464 263.584l-19.632-19.632 110.336-110.336c6.464 6.656 13.392 12.848 20.752 18.528l-111.456 111.44z m228.464-103.584c-65.92 0-122.576-40.096-147.056-97.136H768c35.2 0 64-28.8 64-64v-145.776c56.896 24.544 96.88 81.12 96.88 146.912 0 88.224-71.776 160-160 160z"
-                fill="currentColor"
-                p-id="1115"
-              ></path>
-              <path
-                d="M864.576 672c0 52.928-43.072 96-96 96v32a128 128 0 0 0 128-128h-32z"
-                fill="currentColor"
-                p-id="1116"
-              ></path>
-            </svg>`}
+          : html`
+              <!-- Inactive state: code bracket icon -->
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="16 18 22 12 16 6"/>
+                <polyline points="8 6 2 12 8 18"/>
+              </svg>
+            `}
       </div>
       <div
         id="inspector-node-tree"
@@ -1823,28 +1791,72 @@ export class CodeInspectorComponent extends LitElement {
       line-height: 12px;
       margin-top: 4px;
     }
+    /* Switch Button - Warm Academic Design */
     .inspector-switch {
       position: fixed;
       z-index: 9999999999999;
-      top: 50%;
+      bottom: 24px;
       right: 24px;
-      font-size: 22px;
-      transform: translateY(-100%);
+      font-size: 18px;
       display: flex;
       align-items: center;
       justify-content: center;
-      background-color: rgba(255, 255, 255, 0.8);
-      color: #555;
-      height: 32px;
-      width: 32px;
-      border-radius: 50%;
-      box-shadow: 0px 1px 2px -2px rgba(0, 0, 0, 0.2),
-        0px 3px 6px 0px rgba(0, 0, 0, 0.16),
-        0px 5px 12px 4px rgba(0, 0, 0, 0.12);
+      /* Warm Academic: ivory background with subtle warmth */
+      background: linear-gradient(135deg, #FDFCFA 0%, #F9F9F7 100%);
+      color: #87867F;
+      height: 44px;
+      width: 44px;
+      border-radius: 12px;
+      /* Subtle paper-like shadow */
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06),
+        0 1px 2px rgba(0, 0, 0, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(135, 134, 127, 0.15);
       cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1),
+          0 2px 4px rgba(0, 0, 0, 0.06),
+          inset 0 1px 0 rgba(255, 255, 255, 0.9);
+        border-color: rgba(204, 120, 92, 0.3);
+        color: #CC785C;
+      }
+
+      &:active {
+        transform: translateY(0);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08),
+          inset 0 1px 2px rgba(0, 0, 0, 0.04);
+      }
+
+      svg {
+        transition: transform 0.2s ease;
+      }
+
+      &:hover svg {
+        transform: scale(1.05);
+      }
     }
     .active-inspector-switch {
-      color: #006aff;
+      /* Terracotta accent when active */
+      background: linear-gradient(135deg, #CC785C 0%, #B86B4F 100%);
+      color: #FFFFFF;
+      border-color: #B86B4F;
+      box-shadow: 0 4px 12px rgba(204, 120, 92, 0.3),
+        0 2px 4px rgba(204, 120, 92, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+
+      &:hover {
+        background: linear-gradient(135deg, #D98A6E 0%, #CC785C 100%);
+        color: #FFFFFF;
+        border-color: #CC785C;
+        box-shadow: 0 6px 16px rgba(204, 120, 92, 0.35),
+          0 3px 6px rgba(204, 120, 92, 0.25),
+          inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      }
     }
     .move-inspector-switch {
       cursor: move;
