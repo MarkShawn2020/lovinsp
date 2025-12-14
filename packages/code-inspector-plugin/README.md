@@ -7,7 +7,7 @@
 </p>
 
 [![Original Repo](https://img.shields.io/badge/upstream-zh--lx%2Fcode--inspector-blue)](https://github.com/zh-lx/code-inspector)
-[![Fork Version](https://img.shields.io/badge/fork-v1.4.2-green)](https://github.com/MarkShawn2020/code-inspector)
+[![Fork Version](https://img.shields.io/badge/fork-v1.4.3-green)](https://github.com/MarkShawn2020/code-inspector)
 [![MIT-license](https://img.shields.io/npm/l/code-inspector.svg)](https://opensource.org/licenses/MIT)
 
 </div>
@@ -22,7 +22,7 @@ The original plugin is excellent for traditional IDE workflows (click → open i
 
 > **"I don't want to open my IDE. I want to copy the file path and paste it to my AI assistant."**
 
-### 🆕 What's New in This Fork (v1.4.2)
+### 🆕 What's New in This Fork (v1.4.3)
 
 - **📋 Copy Mode**: Click to copy file paths instead of opening IDE
   - Visual toast notifications when copying
@@ -60,7 +60,7 @@ This tells npm/pnpm to fetch `@code-inspector/*` packages from Cloudsmith instea
 ### Step 2: Install Main Package
 
 ```bash
-pnpm add code-inspector-plugin@https://npm.cloudsmith.io/mark/code-inspector/code-inspector-plugin/-/code-inspector-plugin-1.4.2.tgz
+pnpm add code-inspector-plugin@https://npm.cloudsmith.io/mark/code-inspector/code-inspector-plugin/-/code-inspector-plugin-1.4.3.tgz
 ```
 
 > **Why both steps?** The main package `code-inspector-plugin` uses direct URL. But it depends on scoped packages like `@code-inspector/core`, `@code-inspector/vite`, etc. The `.npmrc` config ensures these dependencies are also fetched from Cloudsmith.
