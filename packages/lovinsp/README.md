@@ -190,6 +190,74 @@ export default defineConfig({
 
 </details>
 
+## Migrating from code-inspector (Cloudsmith)
+
+If you were using `code-inspector` from a private Cloudsmith registry, follow these steps to migrate to the new `lovinsp` package on npm:
+
+### 1. Remove old packages
+
+```bash
+# Remove old code-inspector packages
+pnpm remove code-inspector @code-inspector/core @code-inspector/vite @code-inspector/webpack
+# or
+npm uninstall code-inspector @code-inspector/core @code-inspector/vite @code-inspector/webpack
+```
+
+### 2. Clean up .npmrc
+
+Remove or comment out Cloudsmith registry configuration from your `.npmrc`:
+
+```diff
+- @code-inspector:registry=https://npm.cloudsmith.io/your-org/your-repo/
+- //npm.cloudsmith.io/your-org/your-repo/:_authToken=${CLOUDSMITH_TOKEN}
+```
+
+### 3. Install lovinsp
+
+```bash
+pnpm add lovinsp
+# or
+npm install lovinsp
+```
+
+### 4. Update imports
+
+```diff
+- import { codeInspectorPlugin } from 'code-inspector';
++ import { lovinspPlugin } from 'lovinsp';
+```
+
+Or for individual adapters:
+
+```diff
+- import { vitePlugin } from '@code-inspector/vite';
++ import { vitePlugin } from '@lovinsp/vite';
+```
+
+### 5. Update configuration
+
+```diff
+// vite.config.js
+- codeInspectorPlugin({ bundler: 'vite' })
++ lovinspPlugin({ bundler: 'vite' })
+```
+
+### Package name mapping
+
+| Old (code-inspector) | New (lovinsp) |
+|---------------------|---------------|
+| `code-inspector` | `lovinsp` |
+| `@code-inspector/core` | `@lovinsp/core` |
+| `@code-inspector/vite` | `@lovinsp/vite` |
+| `@code-inspector/webpack` | `@lovinsp/webpack` |
+| `@code-inspector/esbuild` | `@lovinsp/esbuild` |
+| `@code-inspector/turbopack` | `@lovinsp/turbopack` |
+| `@code-inspector/mako` | `@lovinsp/mako` |
+
+### API compatibility
+
+The API remains **100% compatible**. Only the package names and import paths have changed. All configuration options work exactly the same.
+
 ## Packages
 
 | Package | Description |
