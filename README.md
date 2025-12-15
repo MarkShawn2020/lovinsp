@@ -1,1 +1,1 @@
-packages/code-inspector-plugin/README.md
+packages/lovinsp/README.md
