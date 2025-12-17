@@ -165,6 +165,9 @@ export class LovinspComponent extends LitElement {
   @state()
   currentMode: InspectorAction | null = null; // 全局共享的当前操作模式（基于键盘状态）
 
+  // 用于防止双指触摸板右键误触发 click
+  private pendingClickAction: (() => void) | null = null;
+
   @query('#code-inspector-container')
   codeInspectorContainerRef!: HTMLDivElement;
   @query('#element-info')
@@ -959,12 +962,31 @@ export class LovinspComponent extends LitElement {
       e.preventDefault();
       e.stopImmediatePropagation();
 
+      // 如果导航窗已打开，点击导航窗外部只关闭导航窗，不执行 inspect 操作
+      if (this.showNodeTree && !e.composedPath().includes(this.nodeTreeRef)) {
+        this.removeLayerPanel();
+        return;
+      }
+
       if (this.show) {
         // 使用全局共享的当前模式
         const actionToExecute = this.currentMode || this.getDefaultAction();
 
         if (actionToExecute !== 'none') {
-          this.trackCode(actionToExecute as InspectorAction);
+          // 延迟到下一帧执行，防止 Mac 触摸板双指右键被误识别为单击
+          // 双指操作的 click 和 contextmenu 在同一事件循环中触发
+          // 如果 contextmenu 触发，会清除 pendingClickAction
+          this.pendingClickAction = () => {
+            this.trackCode(actionToExecute as InspectorAction);
+            this.removeCover();
+          };
+          requestAnimationFrame(() => {
+            if (this.pendingClickAction) {
+              this.pendingClickAction();
+              this.pendingClickAction = null;
+            }
+          });
+          return;
         }
         // 清除遮罩层
         this.removeCover();
@@ -976,6 +998,9 @@ export class LovinspComponent extends LitElement {
   };
 
   handleContextMenu = (e: MouseEvent) => {
+    // 取消待执行的 click 操作，防止双指右键误触发
+    this.pendingClickAction = null;
+
     if (this.isTracking(e) && !this.dragging) {
       e.preventDefault();
 
