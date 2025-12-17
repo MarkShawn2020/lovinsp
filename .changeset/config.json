@@ -1,0 +1,34 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.1.2/schema.json",
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "fixed": [
+    ["@lovinsp/core", "@lovinsp/vite", "@lovinsp/webpack", "@lovinsp/esbuild", "@lovinsp/turbopack", "@lovinsp/mako", "lovinsp"]
+  ],
+  "linked": [],
+  "access": "public",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": [
+    "frontend-template",
+    "vue-example",
+    "demo-mako",
+    "next15",
+    "nextjs",
+    "nuxt-app",
+    "rsbuild-vue3",
+    "rspack-vue3",
+    "turbopack-next",
+    "vite-astro",
+    "vite-preact",
+    "vite-qwik",
+    "fine-admin",
+    "vite-solid",
+    "vite-svelte",
+    "vite-ts-vue27",
+    "vite-vue3",
+    "react-cra",
+    "webpack-vue-tsx",
+    "webpack5-vue3"
+  ]
+}
