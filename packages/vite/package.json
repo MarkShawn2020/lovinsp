@@ -1,6 +1,6 @@
 {
   "name": "@lovinsp/vite",
-  "version": "1.4.14",
+  "version": "1.4.15",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "typings": "./types/index.d.ts",
