@@ -1002,7 +1002,9 @@ export class LovinspComponent extends LitElement {
     this.pendingClickAction = null;
 
     if (this.isTracking(e) && !this.dragging) {
+      // 必须同时阻止默认行为和事件传播，防止右键菜单和文本选择等行为透传
       e.preventDefault();
+      e.stopImmediatePropagation();
 
       const nodePath = e.composedPath() as HTMLElement[];
       const nodeTree = this.generateNodeTree(nodePath);
