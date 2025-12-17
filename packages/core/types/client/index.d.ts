@@ -95,6 +95,7 @@ export declare class LovinspComponent extends LitElement {
     sendType: 'xhr' | 'img';
     activeNode: ActiveNode;
     currentMode: InspectorAction | null;
+    private pendingClickAction;
     codeInspectorContainerRef: HTMLDivElement;
     elementInfoRef: HTMLDivElement;
     nodeTreeRef: HTMLDivElement;
