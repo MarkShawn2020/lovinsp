@@ -1078,6 +1078,14 @@ export class LovinspComponent extends LitElement {
     }
   };
 
+  // 阻止文本选择（Shift+点击会触发浏览器的扩展选择行为）
+  handleSelectStart = (e: Event) => {
+    // selectstart 事件没有修饰键信息，需要用全局状态判断
+    if (this.show || this.showNodeTree) {
+      e.preventDefault();
+    }
+  };
+
   // 打印功能提示信息
   printTip = () => {
     const agent = navigator.userAgent.toLowerCase();
@@ -1238,6 +1246,8 @@ export class LovinspComponent extends LitElement {
     window.addEventListener('mouseup', this.handleMouseUp, true);
     window.addEventListener('touchend', this.handleMouseUp, true);
     window.addEventListener('contextmenu', this.handleContextMenu, true);
+    // 阻止 Shift+点击触发的文本选择
+    window.addEventListener('selectstart', this.handleSelectStart, true);
   }
 
   disconnectedCallback(): void {
@@ -1257,6 +1267,7 @@ export class LovinspComponent extends LitElement {
     window.removeEventListener('mouseup', this.handleMouseUp, true);
     window.removeEventListener('touchend', this.handleMouseUp, true);
     window.removeEventListener('contextmenu', this.handleContextMenu, true);
+    window.removeEventListener('selectstart', this.handleSelectStart, true);
   }
 
   renderNodeTree = (node: TreeNode): TemplateResult => html`
