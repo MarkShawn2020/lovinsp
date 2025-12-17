@@ -1,5 +1,6 @@
 {
   "name": "lovinsp",
+  "packageManager": "pnpm@10.18.1",
   "version": "0.0.1",
   "repository": "git@github.com:MarkShawn2020/lovinsp.git",
   "author": "zh-lx <18366276315@163.com>",
