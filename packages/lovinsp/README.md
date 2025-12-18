@@ -1,14 +1,22 @@
-<div align="center">
+<p align="center">
+  <img src="docs/images/cover.png" alt="Lovinsp Cover" width="100%">
+</p>
 
-# Lovinsp
+<h1 align="center">
+  <img src="assets/logo.svg" width="32" height="32" alt="Logo" align="top">
+  Lovinsp
+</h1>
 
-**Click any DOM element → Jump to source code in your IDE**
+<p align="center">
+  <strong>Click any DOM element → Jump to source code in your IDE</strong><br>
+  <sub>Vue · React · Svelte · Solid · Astro · Preact · Qwik</sub>
+</p>
 
-[![npm version](https://img.shields.io/npm/v/lovinsp.svg)](https://www.npmjs.com/package/lovinsp)
-[![npm downloads](https://img.shields.io/npm/dm/lovinsp.svg)](https://www.npmjs.com/package/lovinsp)
-[![MIT License](https://img.shields.io/npm/l/lovinsp.svg)](https://opensource.org/licenses/MIT)
-
-</div>
+<p align="center">
+  <a href="https://www.npmjs.com/package/lovinsp"><img src="https://img.shields.io/npm/v/lovinsp.svg" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/lovinsp"><img src="https://img.shields.io/npm/dm/lovinsp.svg" alt="npm downloads"></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/npm/l/lovinsp.svg" alt="MIT License"></a>
+</p>
 
 ---
 
