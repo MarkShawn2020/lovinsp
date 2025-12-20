@@ -1,5 +1,17 @@
 # lovinsp
 
+## 1.4.17
+
+### Patch Changes
+
+- Updated dependencies [e2fa95b]
+  - @lovinsp/core@1.4.17
+  - @lovinsp/esbuild@1.4.17
+  - @lovinsp/mako@1.4.17
+  - @lovinsp/turbopack@1.4.17
+  - @lovinsp/vite@1.4.17
+  - @lovinsp/webpack@1.4.17
+
 ## 1.4.16
 
 ### Patch Changes
