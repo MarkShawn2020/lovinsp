@@ -22,9 +22,7 @@ interface ElementTipStyle {
     vertical: string;
     horizon: string;
     visibility: string;
-    additionStyle?: {
-        transform: string;
-    };
+    additionStyle?: Record<string, string>;
 }
 interface TreeNode extends ElementInfo {
     children: TreeNode[];
@@ -96,6 +94,8 @@ export declare class LovinspComponent extends LitElement {
     sendType: 'xhr' | 'img';
     activeNode: ActiveNode;
     currentMode: InspectorAction | null;
+    mouseX: number;
+    mouseY: number;
     sourceContext: {
         lines: string[];
         startLine: number;
@@ -114,20 +114,15 @@ export declare class LovinspComponent extends LitElement {
     isTracking: (e: any) => boolean | "";
     getDomPropertyValue: (target: HTMLElement, property: string) => number;
     getElementSize: (target: HTMLElement, rect?: DOMRect | DOMRectReadOnly) => Pick<ElementInfo, 'width' | 'height'>;
-    calculateElementInfoPosition: (target: HTMLElement) => Promise<{
+    calculateElementInfoPosition: (_target: HTMLElement) => Promise<{
         vertical: string;
         horizon: string;
-        top: number;
-        left: number;
-        isExternal: boolean;
-        additionStyle?: undefined;
-    } | {
-        vertical: string;
-        horizon: string;
-        top: number;
-        left: number;
-        isExternal: boolean;
         additionStyle: {
+            position: string;
+            top: string;
+            left: string;
+            right: string;
+            bottom: string;
             transform: string;
         };
     }>;

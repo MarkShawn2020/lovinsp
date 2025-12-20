@@ -53,9 +53,7 @@ interface ElementTipStyle {
   vertical: string;
   horizon: string;
   visibility: string;
-  additionStyle?: {
-    transform: string;
-  };
+  additionStyle?: Record<string, string>;
 }
 
 interface TreeNode extends ElementInfo {
@@ -166,6 +164,10 @@ export class LovinspComponent extends LitElement {
   @state()
   currentMode: InspectorAction | null = null; // 全局共享的当前操作模式（基于键盘状态）
   @state()
+  mouseX = 0; // 当前鼠标 X 坐标
+  @state()
+  mouseY = 0; // 当前鼠标 Y 坐标
+  @state()
   sourceContext: { lines: string[], startLine: number, targetLine: number } | null = null; // 源代码上下文
 
   private sourceContextAbortController: AbortController | null = null;
@@ -272,156 +274,55 @@ export class LovinspComponent extends LitElement {
     };
   };
 
-  // 计算 element-info 的最佳位置
-  calculateElementInfoPosition = async (target: HTMLElement) => {
-    const { top, right, bottom, left } = target.getBoundingClientRect();
+  // 计算 element-info 的最佳位置（基于鼠标位置，像 tooltip 一样跟随鼠标）
+  calculateElementInfoPosition = async (_target: HTMLElement) => {
     const browserHeight = document.documentElement.clientHeight;
     const browserWidth = document.documentElement.clientWidth;
-    const marginTop = this.getDomPropertyValue(target, 'margin-top');
-    const marginRight = this.getDomPropertyValue(target, 'margin-right');
-    const marginBottom = this.getDomPropertyValue(target, 'margin-bottom');
-    const marginLeft = this.getDomPropertyValue(target, 'margin-left');
 
     await nextTick();
 
     const { width, height } = this.elementInfoRef.getBoundingClientRect();
 
-    // 容器的实际边界（包含 margin）
-    const containerTop = top - marginTop;
-    const containerRight = right + marginRight;
-    const containerBottom = bottom + marginBottom;
-    const containerLeft = left - marginLeft;
+    // 鼠标偏移量，确保悬浮窗不遮挡鼠标
+    const offset = 20;
 
-    // 定义八个位置的计算方法
-    const positions = [
-      // 外部位置
-      {
-        // 右下方(外部)
-        vertical: 'element-info-bottom',
-        horizon: 'element-info-right',
-        top: containerBottom,
-        left: containerLeft,
-        isExternal: true,
-      },
-      {
-        // 左下方(外部)
-        vertical: 'element-info-bottom',
-        horizon: 'element-info-left',
-        top: containerBottom,
-        left: containerRight - width,
-        isExternal: true,
-      },
-      {
-        // 右上方(外部)
-        vertical: 'element-info-top',
-        horizon: 'element-info-right',
-        top: containerTop - height,
-        left: containerLeft,
-        isExternal: true,
-      },
-      {
-        // 左上方(外部)
-        vertical: 'element-info-top',
-        horizon: 'element-info-left',
-        top: containerTop - height,
-        left: containerRight - width,
-        isExternal: true,
-      },
-      // 内部位置
-      {
-        // 右下方(内部)
-        vertical: 'element-info-bottom-inner',
-        horizon: 'element-info-right',
-        top: containerBottom - height,
-        left: containerLeft,
-        isExternal: false,
-      },
-      {
-        // 左下方(内部)
-        vertical: 'element-info-bottom-inner',
-        horizon: 'element-info-left',
-        top: containerBottom - height,
-        left: containerRight - width,
-        isExternal: false,
-      },
-      {
-        // 右上方(内部)
-        vertical: 'element-info-top-inner',
-        horizon: 'element-info-right',
-        top: containerTop,
-        left: containerLeft,
-        isExternal: false,
-      },
-      {
-        // 左上方(内部)
-        vertical: 'element-info-top-inner',
-        horizon: 'element-info-left',
-        top: containerTop,
-        left: containerRight - width,
-        isExternal: false,
-      },
-      // 超出屏幕
-      {
-        // 左上方(屏幕内)
-        vertical: 'element-info-top-inner',
-        horizon: 'element-info-left',
-        top: Math.max(0, containerTop),
-        left: containerRight - width,
-        isExternal: false,
-        additionStyle: {
-          transform: `translateY(${Math.max(0, -containerTop)}px)`,
-        },
-      },
-      {
-        // 右上方(屏幕内)
-        vertical: 'element-info-top-inner',
-        horizon: 'element-info-right',
-        top: Math.max(0, containerTop),
-        left: containerRight - width,
-        isExternal: false,
-        additionStyle: {
-          transform: `translateY(${Math.max(0, -containerTop)}px)`,
-        },
-      },
-    ];
+    // 计算四个方向的可用空间
+    const spaceRight = browserWidth - this.mouseX;
+    const spaceBottom = browserHeight - this.mouseY;
 
-    // 检查位置是否超出屏幕
-    const isOutOfScreen = (pos: { left: number; top: number }) => {
-      return (
-        pos.left < 0 ||
-        pos.left + width > browserWidth ||
-        pos.top < 0 ||
-        pos.top + height > browserHeight
-      );
-    };
+    let left: number;
+    let top: number;
 
-    for (const pos of positions) {
-      const browserWidth = document.documentElement.clientWidth;
-      if (pos.horizon.endsWith('left')) {
-        const overflowWidth = containerLeft + width - browserWidth;
-        if (overflowWidth > 0) {
-          pos.additionStyle = {
-            transform: `translateX(-${overflowWidth}px) ${
-              pos.additionStyle?.transform || ''
-            }`,
-          };
-        }
-      } else {
-        const overflowWidth = width - containerRight;
-        if (overflowWidth > 0) {
-          pos.additionStyle = {
-            transform: `translateX(${overflowWidth}px) ${
-              pos.additionStyle?.transform || ''
-            }`,
-          };
-        }
-      }
-      if (!isOutOfScreen(pos)) {
-        return pos;
-      }
+    // 水平方向：优先右侧
+    if (spaceRight >= width + offset) {
+      left = this.mouseX + offset;
+    } else {
+      left = this.mouseX - width - offset;
     }
-    // 如果所有位置都超出屏幕，返回一个屏幕内侧的位置
-    return positions[0];
+
+    // 垂直方向：优先下方
+    if (spaceBottom >= height + offset) {
+      top = this.mouseY + offset;
+    } else {
+      top = this.mouseY - height - offset;
+    }
+
+    // 边界检查，确保不超出屏幕
+    left = Math.max(0, Math.min(left, browserWidth - width));
+    top = Math.max(0, Math.min(top, browserHeight - height));
+
+    return {
+      vertical: '',
+      horizon: '',
+      additionStyle: {
+        position: 'fixed',
+        top: `${top}px`,
+        left: `${left}px`,
+        right: 'auto',
+        bottom: 'auto',
+        transform: 'none',
+      },
+    };
   };
 
   // 渲染遮罩层
@@ -956,6 +857,15 @@ export class LovinspComponent extends LitElement {
 
   // 鼠标移动渲染遮罩层位置
   handleMouseMove = async (e: MouseEvent | TouchEvent) => {
+    // 记录鼠标位置（使用视口坐标，与 fixed 定位的悬浮窗一致）
+    if (e instanceof MouseEvent) {
+      this.mouseX = e.clientX;
+      this.mouseY = e.clientY;
+    } else if (e.touches[0]) {
+      this.mouseX = e.touches[0].clientX;
+      this.mouseY = e.touches[0].clientY;
+    }
+
     if (this.isTracking(e) && !this.dragging) {
       const nodePath = e.composedPath() as HTMLElement[];
       let targetNode;
