@@ -165,6 +165,10 @@ export class LovinspComponent extends LitElement {
   activeNode: ActiveNode = {};
   @state()
   currentMode: InspectorAction | null = null; // 全局共享的当前操作模式（基于键盘状态）
+  @state()
+  sourceContext: { lines: string[], startLine: number, targetLine: number } | null = null; // 源代码上下文
+
+  private sourceContextAbortController: AbortController | null = null;
 
   // 用于防止双指触摸板右键误触发 click
   private pendingClickAction: (() => void) | null = null;
@@ -487,6 +491,8 @@ export class LovinspComponent extends LitElement {
         additionStyle,
       };
     }
+    // 获取源代码上下文
+    this.fetchSourceContext();
   };
 
   getAstroFilePath = (target: HTMLElement): string => {
@@ -528,6 +534,8 @@ export class LovinspComponent extends LitElement {
       return;
     }
     this.show = false;
+    this.sourceContext = null;
+    this.sourceContextAbortController?.abort();
     this.removeGlobalCursorStyle();
     document.body.style.userSelect = this.preUserSelect;
     this.preUserSelect = '';
@@ -613,6 +621,33 @@ export class LovinspComponent extends LitElement {
     const style = document.getElementById(styleId);
     if (style) {
       style.remove();
+    }
+  };
+
+  // 获取源代码上下文
+  fetchSourceContext = async () => {
+    // 取消之前的请求
+    this.sourceContextAbortController?.abort();
+    this.sourceContextAbortController = new AbortController();
+
+    const { path, line } = this.element;
+    if (!path || !line) {
+      this.sourceContext = null;
+      return;
+    }
+
+    try {
+      const file = encodeURIComponent(path);
+      const url = `http://${this.ip}:${this.port}/source?file=${file}&line=${line}`;
+      const response = await fetch(url, { signal: this.sourceContextAbortController.signal });
+      const data = await response.json();
+      if (data) {
+        this.sourceContext = { ...data, targetLine: line };
+      } else {
+        this.sourceContext = null;
+      }
+    } catch {
+      // 忽略 abort 错误
     }
   };
 
@@ -1452,6 +1487,15 @@ export class LovinspComponent extends LitElement {
             <div class="path-line">
               ${this.element.path}:${this.element.line}:${this.element.column}
             </div>
+            ${this.sourceContext ? html`
+              <div class="source-preview">
+                <pre><code>${this.sourceContext.lines.map((line, idx) => {
+                  const lineNum = this.sourceContext!.startLine + idx;
+                  const isTarget = lineNum === this.sourceContext!.targetLine;
+                  return html`<div class="source-line ${isTarget ? 'target' : ''}"><span class="line-num">${lineNum}</span><span class="line-code">${line || ' '}</span></div>`;
+                })}</code></pre>
+              </div>
+            ` : ''}
             <div class="brand-footer">
               ${modeHints.length > 0 ? html`
                 <div class="mode-hints" role="list" aria-label="Available keyboard shortcuts">
@@ -1614,6 +1658,42 @@ export class LovinspComponent extends LitElement {
     }
     .path-line {
       padding: 0 10px 6px;
+    }
+    .source-preview {
+      padding: 0 10px 8px;
+      max-height: 200px;
+      overflow: auto;
+      pre {
+        margin: 0;
+        padding: 8px;
+        background: #1e1e1e;
+        border-radius: 6px;
+        font-size: 11px;
+        line-height: 1.4;
+        overflow-x: auto;
+      }
+      code {
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        color: #d4d4d4;
+      }
+      .source-line {
+        display: flex;
+        white-space: pre;
+      }
+      .source-line.target {
+        background: rgba(255, 200, 50, 0.25);
+        border-radius: 2px;
+      }
+      .line-num {
+        color: #858585;
+        min-width: 32px;
+        padding-right: 12px;
+        text-align: right;
+        user-select: none;
+      }
+      .line-code {
+        flex: 1;
+      }
     }
     .brand-footer {
       border-top: 1px solid rgba(0, 0, 0, 0.05);

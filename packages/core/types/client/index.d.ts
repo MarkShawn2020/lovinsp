@@ -96,6 +96,12 @@ export declare class LovinspComponent extends LitElement {
     sendType: 'xhr' | 'img';
     activeNode: ActiveNode;
     currentMode: InspectorAction | null;
+    sourceContext: {
+        lines: string[];
+        startLine: number;
+        targetLine: number;
+    } | null;
+    private sourceContextAbortController;
     private pendingClickAction;
     codeInspectorContainerRef: HTMLDivElement;
     elementInfoRef: HTMLDivElement;
@@ -138,6 +144,7 @@ export declare class LovinspComponent extends LitElement {
     handleGlobalKeyChange: (e: KeyboardEvent) => void;
     addGlobalCursorStyle: () => void;
     removeGlobalCursorStyle: () => void;
+    fetchSourceContext: () => Promise<void>;
     sendXHR: () => void;
     sendImg: () => void;
     buildTargetUrl: () => string;

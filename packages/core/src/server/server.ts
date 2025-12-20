@@ -1,5 +1,6 @@
 // 启动本地接口，访问时唤起vscode
 import http from 'http';
+import fs from 'fs';
 import portFinder from 'portfinder';
 import { launchIDE } from 'launch-ide';
 import { DefaultPort } from '../shared/constant';
@@ -40,14 +41,52 @@ export function getRelativeOrAbsolutePath(
   return pathType === 'relative' ? getRelativePath(filePath) : filePath;
 }
 
+// 获取源代码片段（上下文）
+function getSourceContext(filePath: string, line: number, contextLines: number = 5): { lines: string[], startLine: number } | null {
+  try {
+    if (!fs.existsSync(filePath)) return null;
+    const content = fs.readFileSync(filePath, 'utf-8');
+    const allLines = content.split('\n');
+    const startLine = Math.max(1, line - contextLines);
+    const endLine = Math.min(allLines.length, line + contextLines);
+    const lines = allLines.slice(startLine - 1, endLine);
+    return { lines, startLine };
+  } catch {
+    return null;
+  }
+}
+
 export function createServer(
   callback: (port: number) => any,
   options?: CodeOptions,
   record?: RecordInfo
 ) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': '*',
+    'Access-Control-Allow-Headers': '*',
+    'Access-Control-Allow-Private-Network': 'true',
+  };
+
   const server = http.createServer((req: any, res: any) => {
-    // 收到请求唤醒vscode
-    const params = new URLSearchParams(req.url.slice(1));
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const params = url.searchParams;
+
+    // 处理 /source 请求 - 获取源代码片段
+    if (url.pathname === '/source') {
+      let file = decodeURIComponent(params.get('file') || '');
+      if (ProjectRootPath && !path.isAbsolute(file)) {
+        file = `${ProjectRootPath}/${file}`;
+      }
+      const line = Number(params.get('line') || 1);
+      const context = getSourceContext(file, line);
+
+      res.writeHead(200, { ...corsHeaders, 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(context));
+      return;
+    }
+
+    // 原有逻辑：打开 IDE
     let file = decodeURIComponent(params.get('file') as string);
     if (ProjectRootPath && !path.isAbsolute(file)) {
       file = `${ProjectRootPath}/${file}`;
@@ -57,23 +96,13 @@ export function createServer(
       ProjectRootPath &&
       !file.startsWith(ProjectRootPath)
     ) {
-      res.writeHead(403, {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': '*',
-        'Access-Control-Allow-Headers': '*',
-        'Access-Control-Allow-Private-Network': 'true',
-      });
+      res.writeHead(403, corsHeaders);
       res.end('not allowed to open this file');
       return;
     }
     const line = Number(params.get('line'));
     const column = Number(params.get('column'));
-    res.writeHead(200, {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': '*',
-      'Access-Control-Allow-Headers': '*',
-      'Access-Control-Allow-Private-Network': 'true',
-    });
+    res.writeHead(200, corsHeaders);
     res.end('ok');
     // 调用 hooks
     options?.hooks?.afterInspectRequest?.(options, { file, line, column });
