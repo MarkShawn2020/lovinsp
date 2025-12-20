@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.17
+
+### Patch Changes
+
+- e2fa95b: refactor: 提取鼠标偏移量为常量
+
 ## 1.4.16
 
 ### Patch Changes

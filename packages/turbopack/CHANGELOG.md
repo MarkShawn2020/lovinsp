@@ -1,5 +1,13 @@
 # @lovinsp/turbopack
 
+## 1.4.17
+
+### Patch Changes
+
+- Updated dependencies [e2fa95b]
+  - @lovinsp/core@1.4.17
+  - @lovinsp/webpack@1.4.17
+
 ## 1.4.16
 
 ### Patch Changes
