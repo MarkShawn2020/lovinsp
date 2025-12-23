@@ -47,6 +47,19 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Pack npm packages
+        if: steps.changesets.outputs.published == 'true'
+        run: |
+          mkdir -p release-assets
+          for pkg in core vite webpack esbuild turbopack mako lovinsp; do
+            if [ -d "packages/$pkg" ]; then
+              cd "packages/$pkg"
+              npm pack --pack-destination ../../release-assets
+              cd ../..
+            fi
+          done
+          ls -la release-assets/
+
       - name: Create GitHub Release
         if: steps.changesets.outputs.published == 'true'
         run: |
@@ -65,6 +78,7 @@ jobs:
           gh release create "v${VERSION}" \
             --title "v${VERSION}" \
             --notes "$NOTES" \
-            --latest
+            --latest \
+            release-assets/*.tgz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
