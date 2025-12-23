@@ -51,9 +51,20 @@ jobs:
         if: steps.changesets.outputs.published == 'true'
         run: |
           VERSION=$(node -p "require('./packages/core/package.json').version")
+
+          # Extract release notes from CHANGELOG.md
+          NOTES=$(awk -v ver="$VERSION" '
+            /^## / { if (found) exit; if ($2 == ver) { found=1; next } }
+            found { print }
+          ' packages/core/CHANGELOG.md)
+
+          if [ -z "$NOTES" ]; then
+            NOTES="Release v${VERSION}"
+          fi
+
           gh release create "v${VERSION}" \
             --title "v${VERSION}" \
-            --notes "See [CHANGELOG](https://github.com/MarkShawn2020/lovinsp/blob/main/packages/core/CHANGELOG.md) for details." \
+            --notes "$NOTES" \
             --latest
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
