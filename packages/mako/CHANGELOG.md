@@ -1,5 +1,12 @@
 # @lovinsp/mako
 
+## 1.6.0
+
+### Patch Changes
+
+- Updated dependencies [85c8ed2]
+  - @lovinsp/core@1.6.0
+
 ## 1.5.0
 
 ### Patch Changes

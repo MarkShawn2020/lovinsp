@@ -1,5 +1,17 @@
 # lovinsp
 
+## 1.6.0
+
+### Patch Changes
+
+- Updated dependencies [85c8ed2]
+  - @lovinsp/core@1.6.0
+  - @lovinsp/esbuild@1.6.0
+  - @lovinsp/mako@1.6.0
+  - @lovinsp/turbopack@1.6.0
+  - @lovinsp/vite@1.6.0
+  - @lovinsp/webpack@1.6.0
+
 ## 1.5.0
 
 ### Patch Changes
