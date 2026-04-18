@@ -277,7 +277,8 @@ function recordEntry(record: RecordInfo, file: string, isNextjs: boolean) {
   if (
     !getProjectRecord(record)?.entry &&
     isJsTypeFile(file) &&
-    !isNextjsInstrumentationFile(file)
+    !isNextjsInstrumentationFile(file) &&
+    !isNextjsServerOnlyRouteFile(file)
   ) {
     // exclude svelte kit server entry file
     if (file.includes('/.svelte-kit/')) {
@@ -435,4 +436,24 @@ function isNextjsInstrumentationFile(file: string) {
     isNextjsProject() &&
     getFilePathWithoutExt(file).endsWith('/instrumentation')
   );
+}
+
+// Next.js server-only special route files — they compile into their own
+// bundle and never reach the browser, so they must never be picked as the
+// lovinsp injection entry. See https://nextjs.org/docs/app/api-reference/file-conventions/metadata
+const NEXT_SERVER_ONLY_FILE_BASENAMES = new Set([
+  'opengraph-image',
+  'twitter-image',
+  'icon',
+  'apple-icon',
+  'sitemap',
+  'robots',
+  'manifest',
+  'favicon',
+]);
+
+function isNextjsServerOnlyRouteFile(file: string) {
+  if (!isNextjsProject()) return false;
+  const base = getFilePathWithoutExt(file).split('/').pop() || '';
+  return NEXT_SERVER_ONLY_FILE_BASENAMES.has(base);
 }
