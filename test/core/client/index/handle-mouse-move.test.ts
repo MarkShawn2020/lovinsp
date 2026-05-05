@@ -123,6 +123,18 @@ describe('handleMouseMove', () => {
       validNode.setAttribute(PathName, '/path/to/file.ts:10:5:div');
       const anotherValidNode = document.createElement('div');
       anotherValidNode.setAttribute(PathName, '/another/path.ts:20:5:div');
+      validNode.getBoundingClientRect = vi.fn().mockReturnValue({
+        top: 0,
+        right: 100,
+        bottom: 100,
+        left: 0,
+      });
+      anotherValidNode.getBoundingClientRect = vi.fn().mockReturnValue({
+        top: 10,
+        right: 90,
+        bottom: 90,
+        left: 10,
+      });
       
       const mouseEvent = new MouseEvent('mousemove');
       mouseEvent.composedPath = vi.fn().mockReturnValue([
@@ -135,6 +147,70 @@ describe('handleMouseMove', () => {
       component.handleMouseMove(mouseEvent);
 
       expect(component.renderCover).toHaveBeenCalledWith(validNode);
+    });
+
+    it('should prefer a higher priority source candidate over the default target', () => {
+      const uiNode = document.createElement('div');
+      uiNode.setAttribute(
+        PathName,
+        'src/components/ui/popover.tsx:113:5:div'
+      );
+      uiNode.getBoundingClientRect = vi.fn().mockReturnValue({
+        top: 0,
+        right: 80,
+        bottom: 80,
+        left: 0,
+      });
+
+      const businessNode = document.createElement('section');
+      businessNode.setAttribute(
+        PathName,
+        'src/features/settings/FilterPopover.tsx:24:7:PopoverContent'
+      );
+      businessNode.getBoundingClientRect = vi.fn().mockReturnValue({
+        top: 0,
+        right: 200,
+        bottom: 120,
+        left: 0,
+      });
+
+      component.sourcePriority = JSON.stringify([
+        { match: '/src/components/ui/', priority: -10 },
+        { match: 'src/components/ui/', priority: -10 },
+      ]);
+
+      const mouseEvent = new MouseEvent('mousemove');
+      mouseEvent.composedPath = vi.fn().mockReturnValue([
+        uiNode,
+        businessNode,
+        document.body,
+      ] as EventTarget[]);
+
+      component.handleMouseMove(mouseEvent);
+
+      expect(component.renderCover).toHaveBeenCalledWith(businessNode);
+    });
+
+    it('should still use a lowered priority source when it is the only candidate', () => {
+      const uiNode = document.createElement('div');
+      uiNode.setAttribute(
+        PathName,
+        'src/components/ui/popover.tsx:113:5:div'
+      );
+
+      component.sourcePriority = JSON.stringify([
+        { match: 'src/components/ui/', priority: -10 },
+      ]);
+
+      const mouseEvent = new MouseEvent('mousemove');
+      mouseEvent.composedPath = vi.fn().mockReturnValue([
+        uiNode,
+        document.body,
+      ] as EventTarget[]);
+
+      component.handleMouseMove(mouseEvent);
+
+      expect(component.renderCover).toHaveBeenCalledWith(uiNode);
     });
 
     it('should handle empty path', () => {

@@ -27,8 +27,15 @@ export function transformJsx(content: string, filePath: string, escapeTags: Esca
 
   traverse(ast!, {
     enter({ node }: any) {
-      const nodeName = node?.openingElement?.name?.name || '';
-      const attributes = node?.openingElement?.attributes || [];
+      const openingElement = node?.openingElement;
+      // JSXElement.openingElement.name can be a JSXIdentifier (<div>),
+      // a JSXMemberExpression (<Foo.Bar>) or a JSXNamespacedName (<svg:g>).
+      // We only need a display name for the inspector payload; any of
+      // those are fine because we rely on the source range of the name
+      // node rather than its textual form.
+      const nameNode = openingElement?.name;
+      const nodeName = nameNode?.name || '';
+      const attributes = openingElement?.attributes || [];
       if (
         node.type === 'JSXElement' &&
         nodeName &&
@@ -43,15 +50,23 @@ export function transformJsx(content: string, filePath: string, escapeTags: Esca
           return;
         }
 
-        // 向 dom 上添加一个带有 filepath/row/column 的属性
-        const insertPosition =
-          node.openingElement.end - (node.openingElement.selfClosing ? 2 : 1);
+        // Insert the inspector attribute right after the tag name, *before*
+        // any existing attributes or spread props. This matters for wrapper
+        // components (shadcn/ui, Radix, etc.) that forward `{...props}`:
+        // React merges JSX attributes left-to-right, so putting our
+        // definition-site path first lets the caller's usage-site path —
+        // which was inserted at the `<Button …>` call site — spread in
+        // afterwards and override it. Net result: clicking a shadcn Button
+        // in the DOM jumps to where you *wrote* it, not to the library
+        // component file. When no spread is present we gracefully fall
+        // back to the definition-site path.
+        const insertPosition = nameNode.end;
         const { line, column } = node.loc.start;
         const addition = ` ${PathName}="${filePath}:${line}:${
           column + 1
-        }:${nodeName}"${node.openingElement.attributes.length ? ' ' : ''}`;
+        }:${nodeName}"`;
 
-        s.prependLeft(insertPosition, addition);
+        s.appendRight(insertPosition, addition);
       }
     },
   });

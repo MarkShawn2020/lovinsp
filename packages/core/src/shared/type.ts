@@ -55,6 +55,19 @@ type SourceInfo = {
 
 export type EscapeTags = (string | RegExp)[];
 
+export type SourcePriorityRule = {
+  /**
+   * @zh 匹配源码路径的字符串或正则表达式
+   * @en String or regular expression used to match the source path
+   */
+  match: string | RegExp;
+  /**
+   * @zh 匹配后的优先级分数，分数越高越优先作为默认选中节点
+   * @en Priority score after matching. Higher scores are preferred as the default target
+   */
+  priority: number;
+};
+
 export type Hooks = {
   /**
    * @zh server 端接收到 DOM 源代码定位请求后的钩子函数
@@ -167,6 +180,11 @@ export type CodeOptions = {
    * @en Files not to be compiled
    */
   exclude?: Condition;
+  /**
+   * @zh 调整默认选中节点的源码优先级，不影响右键组件树中的候选节点
+   * @en Adjust source priority for the default selected node without removing candidates from the right-click tree
+   */
+  sourcePriority?: SourcePriorityRule[];
   /**
    * @zh 用于映射文件路径，多用于将 node_modules 中的文件路径映射为项目中的文件路径
    * @en Used to map file paths, often used to map the file path in `node_modules` to the file path in the project

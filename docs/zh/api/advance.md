@@ -47,6 +47,22 @@ window.addEventListener('code-inspector:trackCode', () => {
 - 类型：`string | RegExp | (string | RegExp)[]`
 - 说明：指定不参与编译的文件，默认为 `/node_modules/`，配置后为 `/node_modules/` 和 `exclude` 的并集。
 
+## sourcePriority
+
+- 可选项
+- 类型：`Array<{ match: string | RegExp; priority: number }>`
+- 说明：调整默认选中节点的源码优先级。分数越高越优先作为默认选中节点；分数较低的节点仍会保留在右键组件树中。
+- 示例：当 shadcn/ui 或 Radix primitive 经常抢占默认选中节点时，可以降低 `src/components/ui` 的优先级：
+
+```ts
+lovinspPlugin({
+  bundler: 'vite',
+  sourcePriority: [
+    { match: /src\/components\/ui\//, priority: -10 },
+  ],
+});
+```
+
 ## include <Badge type="tip" text="0.18.0+" vertical="middle" />
 
 - 可选项

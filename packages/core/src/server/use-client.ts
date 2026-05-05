@@ -41,6 +41,30 @@ const iifeClientJsPath = path.resolve(compatibleDirname, './client.iife.js');
 const iifeClientJsCode = fs.readFileSync(iifeClientJsPath, 'utf-8');
 
 const NextEmptyElementName = 'CodeInspectorEmptyElement';
+
+function serializeSourcePriority(
+  sourcePriority: CodeOptions['sourcePriority'] = []
+) {
+  const rules = Array.isArray(sourcePriority) ? sourcePriority : [];
+  return JSON.stringify(
+    rules.map(({ match, priority }) => {
+      if (match instanceof RegExp) {
+        return {
+          match: match.source,
+          flags: match.flags,
+          regexp: true,
+          priority,
+        };
+      }
+
+      return {
+        match,
+        priority,
+      };
+    })
+  );
+}
+
 export function getInjectedCode(
   options: CodeOptions,
   port: number,
@@ -146,6 +170,7 @@ export function getWebComponentCode(options: CodeOptions, port: number) {
     behavior = {},
     ip = false,
     bundler,
+    sourcePriority = [],
   } = options || ({} as CodeOptions);
   const {
     locate = true,
@@ -200,6 +225,9 @@ export function getWebComponentCode(options: CodeOptions, port: number) {
       inspector.target = '${target}';
       inspector.ip = '${getIP(ip)}';
       inspector.defaultAction = ${JSON.stringify(defaultAction)};
+      inspector.sourcePriority = ${JSON.stringify(
+        serializeSourcePriority(sourcePriority)
+      )};
       document.documentElement.append(inspector);
     }
   }

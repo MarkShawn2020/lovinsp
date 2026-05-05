@@ -53,6 +53,7 @@ export declare class LovinspComponent extends LitElement {
     target: string;
     ip: string;
     version: string;
+    sourcePriority: string;
     position: {
         top: number;
         right: number;
@@ -104,6 +105,8 @@ export declare class LovinspComponent extends LitElement {
     locked: boolean;
     ancestorChain: string[];
     private sourceContextAbortController;
+    private sourcePriorityCacheKey;
+    private sourcePriorityRuleCache;
     private pendingClickAction;
     codeInspectorContainerRef: HTMLDivElement;
     elementInfoRef: HTMLDivElement;
@@ -158,6 +161,11 @@ export declare class LovinspComponent extends LitElement {
     private fallbackCopy;
     handleDrag: (e: MouseEvent | TouchEvent) => void;
     isSamePositionNode: (node1: HTMLElement, node2: HTMLElement) => boolean;
+    private getSourcePriorityRules;
+    private getSourcePriorityScore;
+    private collectSourceCandidates;
+    private getDefaultSourceCandidate;
+    private getTargetSourceCandidate;
     handleMouseMove: (e: MouseEvent | TouchEvent) => Promise<void>;
     handleMouseDown: (e: MouseEvent | TouchEvent) => void;
     handleMouseClick: (e: MouseEvent | TouchEvent) => void;

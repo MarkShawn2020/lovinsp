@@ -49,6 +49,22 @@ window.addEventListener('code-inspector:trackCode', () => {
 - Type: `string | RegExp | (string | RegExp)[]`
 - Description: Specify files not to be compiled, default is `/node_modules/`, after configuration, it is the union of `/node_modules/` and `exclude`.
 
+## sourcePriority
+
+- Optional
+- Type: `Array<{ match: string | RegExp; priority: number }>`
+- Description: Adjust source priority for the default selected node. Higher scores are preferred as the default target; lower-priority nodes remain available in the right-click component tree.
+- Example: when shadcn/ui or Radix primitives often take over the default selected node, lower the priority of `src/components/ui`:
+
+```ts
+lovinspPlugin({
+  bundler: 'vite',
+  sourcePriority: [
+    { match: /src\/components\/ui\//, priority: -10 },
+  ],
+});
+```
+
 ## include <Badge type="tip" text="0.18.0+" vertical="middle" />
 
 - Optional

@@ -43,6 +43,18 @@ interface SourceInfo {
   column: number;
 }
 
+interface ClientSourcePriorityRule {
+  match: string;
+  priority: number;
+  regexp?: boolean;
+  flags?: string;
+}
+
+interface SourceCandidate {
+  element: HTMLElement;
+  sourceInfo: SourceInfo;
+}
+
 interface ElementInfo extends SourceInfo {
   width: number;
   height: number;
@@ -110,6 +122,8 @@ export class LovinspComponent extends LitElement {
   ip: string = 'localhost';
   @property()
   version: string = typeof __VERSION__ !== 'undefined' ? __VERSION__ : 'dev';
+  @property({ attribute: 'source-priority' })
+  sourcePriority: string = '[]';
 
   @state()
   position = {
@@ -176,6 +190,8 @@ export class LovinspComponent extends LitElement {
   ancestorChain: string[] = []; // 祖先组件名链（从根到当前）
 
   private sourceContextAbortController: AbortController | null = null;
+  private sourcePriorityCacheKey = '';
+  private sourcePriorityRuleCache: ClientSourcePriorityRule[] = [];
 
   // 用于防止双指触摸板右键误触发 click
   private pendingClickAction: (() => void) | null = null;
@@ -884,6 +900,119 @@ export class LovinspComponent extends LitElement {
     );
   };
 
+  private getSourcePriorityRules(): ClientSourcePriorityRule[] {
+    if (this.sourcePriority === this.sourcePriorityCacheKey) {
+      return this.sourcePriorityRuleCache;
+    }
+
+    this.sourcePriorityCacheKey = this.sourcePriority;
+    try {
+      const rules = JSON.parse(this.sourcePriority);
+      this.sourcePriorityRuleCache = Array.isArray(rules)
+        ? rules.filter(
+            (rule): rule is ClientSourcePriorityRule =>
+              typeof rule?.match === 'string' &&
+              Number.isFinite(rule?.priority)
+          )
+        : [];
+    } catch {
+      this.sourcePriorityRuleCache = [];
+    }
+
+    return this.sourcePriorityRuleCache;
+  }
+
+  private getSourcePriorityScore(
+    sourceInfo: SourceInfo,
+    rules: ClientSourcePriorityRule[]
+  ) {
+    if (!rules.length) {
+      return 0;
+    }
+
+    const sourceText = `${sourceInfo.path}:${sourceInfo.line}:${sourceInfo.column}:${sourceInfo.name}`;
+    return rules.reduce((score, rule) => {
+      if (rule.regexp) {
+        try {
+          return new RegExp(rule.match, rule.flags).test(sourceText)
+            ? score + rule.priority
+            : score;
+        } catch {
+          return score;
+        }
+      }
+
+      return sourceText.includes(rule.match) ? score + rule.priority : score;
+    }, 0);
+  }
+
+  private collectSourceCandidates(nodePath: HTMLElement[]): SourceCandidate[] {
+    const candidates: SourceCandidate[] = [];
+
+    for (const element of nodePath) {
+      const sourceInfo = this.getSourceInfo(element);
+      if (sourceInfo) {
+        candidates.push({ element, sourceInfo });
+      }
+      // Todo: transform astro inside
+      if (element.hasAttribute?.(AstroFile)) {
+        break;
+      }
+    }
+
+    return candidates;
+  }
+
+  private getDefaultSourceCandidate(
+    candidates: SourceCandidate[]
+  ): SourceCandidate | null {
+    let targetCandidate = candidates[0];
+    if (!targetCandidate) {
+      return null;
+    }
+
+    for (let i = 1; i < candidates.length; i++) {
+      const candidate = candidates[i];
+      if (this.isSamePositionNode(targetCandidate.element, candidate.element)) {
+        // 优先寻找组件被调用处源码
+        targetCandidate = candidate;
+      }
+    }
+
+    return targetCandidate;
+  }
+
+  private getTargetSourceCandidate(
+    nodePath: HTMLElement[]
+  ): SourceCandidate | null {
+    const candidates = this.collectSourceCandidates(nodePath);
+    const defaultCandidate = this.getDefaultSourceCandidate(candidates);
+    const rules = this.getSourcePriorityRules();
+
+    if (!defaultCandidate || !rules.length) {
+      return defaultCandidate;
+    }
+
+    let targetCandidate = defaultCandidate;
+    let targetScore = this.getSourcePriorityScore(
+      targetCandidate.sourceInfo,
+      rules
+    );
+
+    for (const candidate of candidates) {
+      const candidateScore = this.getSourcePriorityScore(
+        candidate.sourceInfo,
+        rules
+      );
+      if (candidateScore > targetScore) {
+        targetCandidate = candidate;
+        targetScore = candidateScore;
+      }
+    }
+
+    return targetCandidate;
+  }
+
   // 鼠标移动渲染遮罩层位置
   handleMouseMove = async (e: MouseEvent | TouchEvent) => {
     // 记录鼠标位置（使用视口坐标，与 fixed 定位的悬浮窗一致）
@@ -897,29 +1026,9 @@ export class LovinspComponent extends LitElement {
 
     if (this.isTracking(e) && !this.dragging) {
       const nodePath = e.composedPath() as HTMLElement[];
-      let targetNode;
-      // 寻找第一个有 data-insp-path 属性的元素
-      for (let i = 0; i < nodePath.length; i++) {
-        const node = nodePath[i];
-        if (
-          (node.hasAttribute && node.hasAttribute(PathName)) ||
-          node[PathName]
-        ) {
-          if (!targetNode) {
-            targetNode = node;
-          } else if (this.isSamePositionNode(targetNode, node)) {
-            // 优先寻找组件被调用处源码
-            targetNode = node;
-          }
-        }
-        // Todo: transform astro inside
-        if (node.hasAttribute && node.hasAttribute('data-astro-source-file')) {
-          targetNode = node;
-          break;
-        }
-      }
-      if (targetNode) {
-        this.renderCover(targetNode);
+      const targetCandidate = this.getTargetSourceCandidate(nodePath);
+      if (targetCandidate) {
+        this.renderCover(targetCandidate.element);
       } else {
         this.removeCover();
       }
