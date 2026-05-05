@@ -1,5 +1,12 @@
 # @lovinsp/vite
 
+## 1.7.0
+
+### Patch Changes
+
+- Updated dependencies [e4b96fa]
+  - @lovinsp/core@1.7.0
+
 ## 1.6.0
 
 ### Patch Changes
