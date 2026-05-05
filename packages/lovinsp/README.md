@@ -24,6 +24,7 @@
 
 - **Click-to-Code**: Hold hotkey + click any element to open its source in your IDE
 - **Copy Path Mode**: Copy file paths for AI-assisted coding workflows
+- **Source Priority**: Prefer business components over UI primitives like shadcn/ui while keeping the full component tree available
 - **Multi-Framework**: Vue, React, Svelte, Solid, Astro, Preact, Qwik
 - **Multi-Bundler**: Vite, Webpack, Rspack, Esbuild, Turbopack, Farm, Mako
 - **IDE Support**: VSCode, Cursor, WebStorm, and more
@@ -103,6 +104,9 @@ lovinspPlugin({
     locate: true,            // Enable IDE opening
   },
   hotKeys: ['shiftKey', 'altKey'],  // Custom hotkeys
+  sourcePriority: [
+    { match: /src\/components\/ui\//, priority: -10 }, // Lower shadcn/ui primitives
+  ],
   hideConsole: false,        // Hide console hints
 })
 ```
