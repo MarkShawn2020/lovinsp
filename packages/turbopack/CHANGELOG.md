@@ -1,5 +1,13 @@
 # @lovinsp/turbopack
 
+## 1.8.0
+
+### Patch Changes
+
+- Updated dependencies [fbe8ecd]
+  - @lovinsp/core@1.8.0
+  - @lovinsp/webpack@1.8.0
+
 ## 1.7.0
 
 ### Patch Changes
