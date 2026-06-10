@@ -60,7 +60,9 @@ export function transformJsx(content: string, filePath: string, escapeTags: Esca
         // in the DOM jumps to where you *wrote* it, not to the library
         // component file. When no spread is present we gracefully fall
         // back to the definition-site path.
-        const insertPosition = nameNode.end;
+        const typeParameters =
+          openingElement.typeParameters || openingElement.typeArguments;
+        const insertPosition = typeParameters?.end || nameNode.end;
         const { line, column } = node.loc.start;
         const addition = ` ${PathName}="${filePath}:${line}:${
           column + 1

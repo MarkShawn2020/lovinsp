@@ -24,6 +24,7 @@
 
 - **Click-to-Code**: Hold hotkey + click any element to open its source in your IDE
 - **Copy Path Mode**: Copy file paths for AI-assisted coding workflows
+- **Agent Chat Sidebar**: Select a component, review the attached source context, and send change requests to a local coding agent
 - **Source Priority**: Prefer business components over UI primitives like shadcn/ui while keeping the full component tree available
 - **Multi-Framework**: Vue, React, Svelte, Solid, Astro, Preact, Qwik
 - **Multi-Bundler**: Vite, Webpack, Rspack, Esbuild, Turbopack, Farm, Mako
@@ -107,6 +108,16 @@ lovinspPlugin({
   sourcePriority: [
     { match: /src\/components\/ui\//, priority: -10 }, // Lower shadcn/ui primitives
   ],
+  agent: {
+    // Runs in the local Node server. Use this handler or configure a command.
+    async onRequest(request) {
+      console.log(request.prompt, request.source.file)
+      return 'Request sent to agent.'
+    },
+    // command: 'your-agent-cli',
+    // args: ['--file', '{file}', '--line', '{line}'],
+    // input: 'prompt',
+  },
   hideConsole: false,        // Hide console hints
 })
 ```

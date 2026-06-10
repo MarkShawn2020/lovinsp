@@ -11,3 +11,4 @@ coverage
 deploy.sh
 *.tgz
 alt-index
+.claude/settings.local.json

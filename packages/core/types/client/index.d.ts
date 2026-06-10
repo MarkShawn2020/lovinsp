@@ -13,6 +13,11 @@ interface SourceInfo {
     line: number;
     column: number;
 }
+interface SourceContext {
+    lines: string[];
+    startLine: number;
+    targetLine: number;
+}
 interface ElementInfo extends SourceInfo {
     width: number;
     height: number;
@@ -40,6 +45,18 @@ interface ActiveNode {
 }
 type InspectorAction = 'copy' | 'locate' | 'target' | 'all';
 type TrackAction = InspectorAction | 'default';
+type AgentChatRole = 'context' | 'user' | 'assistant';
+type AgentChatStatus = 'idle' | 'submitting' | 'success' | 'error';
+interface AgentChatMessage {
+    id: string;
+    role: AgentChatRole;
+    content: string;
+    status?: AgentChatStatus;
+    createdAt: number;
+    contextKey?: string;
+    source?: ElementInfo;
+    sourceContext?: SourceContext | null;
+}
 export declare class LovinspComponent extends LitElement {
     hotKeys: string;
     copyKeys: string;
@@ -54,6 +71,10 @@ export declare class LovinspComponent extends LitElement {
     ip: string;
     version: string;
     sourcePriority: string;
+    agent: boolean;
+    agentToken: string;
+    agentPlaceholder: string;
+    agentSubmitLabel: string;
     position: {
         top: number;
         right: number;
@@ -97,13 +118,18 @@ export declare class LovinspComponent extends LitElement {
     currentMode: InspectorAction | null;
     mouseX: number;
     mouseY: number;
-    sourceContext: {
-        lines: string[];
-        startLine: number;
-        targetLine: number;
-    } | null;
+    sourceContext: SourceContext | null;
     locked: boolean;
     ancestorChain: string[];
+    agentPrompt: string;
+    agentStatus: 'idle' | 'submitting' | 'success' | 'error';
+    agentMessage: string;
+    agentPanelPinned: boolean;
+    agentSidebarOpen: boolean;
+    agentSelectedElement: ElementInfo | null;
+    agentSelectedSourceContext: SourceContext | null;
+    agentContextKey: string;
+    agentMessages: AgentChatMessage[];
     private sourceContextAbortController;
     private sourcePriorityCacheKey;
     private sourcePriorityRuleCache;
@@ -111,8 +137,10 @@ export declare class LovinspComponent extends LitElement {
     codeInspectorContainerRef: HTMLDivElement;
     elementInfoRef: HTMLDivElement;
     nodeTreeRef: HTMLDivElement;
+    agentSidebarRef: HTMLElement;
     nodeTreeTitleRef: HTMLDivElement;
     nodeTreeTooltipRef: HTMLDivElement;
+    agentInputRef?: HTMLTextAreaElement;
     private hasModeSpecificKeys;
     private matchesKeys;
     private getTriggeredAction;
@@ -137,15 +165,29 @@ export declare class LovinspComponent extends LitElement {
     getSourceInfo: (target: HTMLElement) => SourceInfo | null;
     getAncestorChain: (target: HTMLElement) => string[];
     removeCover: (force?: boolean | MouseEvent) => void;
+    isInspectorPanelEvent: (e: Event) => boolean;
     renderLayerPanel: (nodeTree: TreeNode, { x, y }: {
         x: number;
         y: number;
     }) => void;
     removeLayerPanel: () => void;
+    getElementKey: (element: Pick<ElementInfo, 'path' | 'line' | 'column'>) => string;
+    shouldPinAgentPanel: () => boolean;
+    shouldKeepAgentPanelVisible: () => boolean;
+    getAgentSourceElement: () => ElementInfo;
+    getAgentSourceContext: () => SourceContext | null;
+    appendOrUpdateAgentContextMessage: () => void;
+    updateSelectedAgentSourceContext: () => void;
+    restorePageInteraction: () => void;
+    pinAgentPanel: (focusInput?: boolean) => Promise<void>;
+    closeAgentPanel: (e?: Event) => void;
     handleGlobalKeyChange: (e: KeyboardEvent) => void;
     addGlobalCursorStyle: () => void;
     removeGlobalCursorStyle: () => void;
     fetchSourceContext: () => Promise<void>;
+    handleAgentPromptInput: (e: Event) => void;
+    handleAgentKeyDown: (e: KeyboardEvent) => void;
+    submitAgentRequest: () => Promise<void>;
     sendXHR: () => void;
     sendImg: () => void;
     buildTargetUrl: () => string;
@@ -188,6 +230,9 @@ export declare class LovinspComponent extends LitElement {
     protected firstUpdated(): void;
     disconnectedCallback(): void;
     renderNodeTree: (node: TreeNode) => TemplateResult;
+    renderAgentSource: (source?: ElementInfo, sourceContext?: SourceContext | null) => "" | TemplateResult<1>;
+    renderAgentMessage: (message: AgentChatMessage) => TemplateResult<1>;
+    renderAgentSidebar: () => "" | TemplateResult<1>;
     render(): TemplateResult<1>;
     static styles: import("lit").CSSResult;
 }

@@ -43,6 +43,12 @@ interface SourceInfo {
   column: number;
 }
 
+interface SourceContext {
+  lines: string[];
+  startLine: number;
+  targetLine: number;
+}
+
 interface ClientSourcePriorityRule {
   match: string;
   priority: number;
@@ -87,6 +93,19 @@ interface ActiveNode {
 type InspectorAction = 'copy' | 'locate' | 'target' | 'all';
 type TrackAction = InspectorAction | 'default';
 type ResolvedAction = InspectorAction | 'none';
+type AgentChatRole = 'context' | 'user' | 'assistant';
+type AgentChatStatus = 'idle' | 'submitting' | 'success' | 'error';
+
+interface AgentChatMessage {
+  id: string;
+  role: AgentChatRole;
+  content: string;
+  status?: AgentChatStatus;
+  createdAt: number;
+  contextKey?: string;
+  source?: ElementInfo;
+  sourceContext?: SourceContext | null;
+}
 
 const PopperWidth = 300;
 const MouseOffset = 20; // 悬浮窗与鼠标的偏移距离
@@ -95,6 +114,10 @@ function nextTick() {
   return new Promise((resolve) => {
     requestAnimationFrame(resolve);
   });
+}
+
+function createAgentMessageId() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 export class LovinspComponent extends LitElement {
@@ -124,6 +147,14 @@ export class LovinspComponent extends LitElement {
   version: string = typeof __VERSION__ !== 'undefined' ? __VERSION__ : 'dev';
   @property({ attribute: 'source-priority' })
   sourcePriority: string = '[]';
+  @property({ type: Boolean })
+  agent: boolean = false;
+  @property({ attribute: 'agent-token' })
+  agentToken: string = '';
+  @property({ attribute: 'agent-placeholder' })
+  agentPlaceholder: string = 'Describe the change for this component';
+  @property({ attribute: 'agent-submit-label' })
+  agentSubmitLabel: string = 'Apply';
 
   @state()
   position = {
@@ -183,11 +214,29 @@ export class LovinspComponent extends LitElement {
   @state()
   mouseY = 0; // 当前鼠标 Y 坐标
   @state()
-  sourceContext: { lines: string[], startLine: number, targetLine: number } | null = null; // 源代码上下文
+  sourceContext: SourceContext | null = null; // 源代码上下文
   @state()
   locked = false; // 锁定模式：悬浮窗始终显示，无需按住快捷键
   @state()
   ancestorChain: string[] = []; // 祖先组件名链（从根到当前）
+  @state()
+  agentPrompt = '';
+  @state()
+  agentStatus: 'idle' | 'submitting' | 'success' | 'error' = 'idle';
+  @state()
+  agentMessage = '';
+  @state()
+  agentPanelPinned = false;
+  @state()
+  agentSidebarOpen = false;
+  @state()
+  agentSelectedElement: ElementInfo | null = null;
+  @state()
+  agentSelectedSourceContext: SourceContext | null = null;
+  @state()
+  agentContextKey = '';
+  @state()
+  agentMessages: AgentChatMessage[] = [];
 
   private sourceContextAbortController: AbortController | null = null;
   private sourcePriorityCacheKey = '';
@@ -202,11 +251,15 @@ export class LovinspComponent extends LitElement {
   elementInfoRef!: HTMLDivElement;
   @query('#inspector-node-tree')
   nodeTreeRef!: HTMLDivElement;
+  @query('#agent-sidebar')
+  agentSidebarRef!: HTMLElement;
 
   @query('.inspector-layer-title')
   nodeTreeTitleRef!: HTMLDivElement;
   @query('#node-tree-tooltip')
   nodeTreeTooltipRef!: HTMLDivElement;
+  @query('.agent-sidebar-input')
+  agentInputRef?: HTMLTextAreaElement;
 
   // 新的多模式检测系统
   private hasModeSpecificKeys(): boolean {
@@ -396,7 +449,8 @@ export class LovinspComponent extends LitElement {
     const sourceInfo = this.getSourceInfo(target);
     const { width, height } = this.getElementSize(target, rect);
     const textContent = this.getElementTextContent(target);
-    this.element = {
+    const previousElementKey = `${this.element.path}:${this.element.line}:${this.element.column}`;
+    const nextElement = {
       name: sourceInfo?.name || target.tagName.toLowerCase(),
       path: sourceInfo?.path || '',
       line: sourceInfo?.line ?? NaN,
@@ -405,6 +459,12 @@ export class LovinspComponent extends LitElement {
       height,
       textContent,
     };
+    const nextElementKey = `${nextElement.path}:${nextElement.line}:${nextElement.column}`;
+    this.element = nextElement;
+    if (previousElementKey !== nextElementKey && !this.agentSidebarOpen) {
+      this.agentStatus = 'idle';
+      this.agentMessage = '';
+    }
     // 计算祖先组件链（从根到当前）
     this.ancestorChain = this.getAncestorChain(target);
     this.show = true;
@@ -472,15 +532,26 @@ export class LovinspComponent extends LitElement {
 
   removeCover = (force?: boolean | MouseEvent) => {
     // 锁定模式下不移除遮罩层（除非强制）
-    if (force !== true && (this.nodeTree || this.locked)) {
+    if (
+      force !== true &&
+      (this.nodeTree || this.locked || this.shouldKeepAgentPanelVisible())
+    ) {
       return;
     }
     this.show = false;
+    this.agentPanelPinned = false;
     this.sourceContext = null;
     this.sourceContextAbortController?.abort();
-    this.removeGlobalCursorStyle();
-    document.body.style.userSelect = this.preUserSelect;
-    this.preUserSelect = '';
+    this.restorePageInteraction();
+  };
+
+  isInspectorPanelEvent = (e: Event) => {
+    const path = e.composedPath?.() || [];
+    return (
+      (!!this.elementInfoRef && path.includes(this.elementInfoRef)) ||
+      (!!this.nodeTreeRef && path.includes(this.nodeTreeRef)) ||
+      (!!this.agentSidebarRef && path.includes(this.agentSidebarRef))
+    );
   };
 
   renderLayerPanel = (
@@ -526,6 +597,116 @@ export class LovinspComponent extends LitElement {
     this.showNodeTree = false;
     this.nodeTree = null;
     this.activeNode = {};
+  };
+
+  getElementKey = (element: Pick<ElementInfo, 'path' | 'line' | 'column'>) => {
+    return `${element.path}:${element.line}:${element.column}`;
+  };
+
+  shouldPinAgentPanel = () => {
+    return this.agent && this.show && !!this.element.path;
+  };
+
+  shouldKeepAgentPanelVisible = () => {
+    return (
+      this.shouldPinAgentPanel() &&
+      (this.agentPanelPinned || this.agentStatus === 'submitting')
+    );
+  };
+
+  getAgentSourceElement = () => {
+    return this.agentSelectedElement || this.element;
+  };
+
+  getAgentSourceContext = () => {
+    return this.agentSelectedSourceContext || this.sourceContext;
+  };
+
+  appendOrUpdateAgentContextMessage = () => {
+    if (!this.element.path) {
+      return;
+    }
+
+    const contextKey = this.getElementKey(this.element);
+    const source = { ...this.element };
+    const sourceContext = this.sourceContext ? { ...this.sourceContext } : null;
+    this.agentContextKey = contextKey;
+    this.agentSelectedElement = source;
+    this.agentSelectedSourceContext = sourceContext;
+
+    const existingIndex = this.agentMessages.findIndex(
+      (message) => message.role === 'context' && message.contextKey === contextKey
+    );
+    const contextMessage: AgentChatMessage = {
+      id:
+        existingIndex >= 0
+          ? this.agentMessages[existingIndex].id
+          : createAgentMessageId(),
+      role: 'context',
+      content: `Selected <${source.name}>`,
+      status: 'success',
+      createdAt:
+        existingIndex >= 0
+          ? this.agentMessages[existingIndex].createdAt
+          : Date.now(),
+      contextKey,
+      source,
+      sourceContext,
+    };
+
+    if (existingIndex >= 0) {
+      this.agentMessages = this.agentMessages.map((message, index) =>
+        index === existingIndex ? contextMessage : message
+      );
+    } else {
+      this.agentMessages = [...this.agentMessages, contextMessage];
+    }
+  };
+
+  updateSelectedAgentSourceContext = () => {
+    if (!this.agentContextKey || this.getElementKey(this.element) !== this.agentContextKey) {
+      return;
+    }
+
+    const sourceContext = this.sourceContext ? { ...this.sourceContext } : null;
+    this.agentSelectedSourceContext = sourceContext;
+    this.agentMessages = this.agentMessages.map((message) =>
+      message.role === 'context' && message.contextKey === this.agentContextKey
+        ? { ...message, sourceContext }
+        : message
+    );
+  };
+
+  restorePageInteraction = () => {
+    this.removeGlobalCursorStyle();
+    if (document.body) {
+      document.body.style.userSelect = this.preUserSelect;
+    }
+    this.preUserSelect = '';
+  };
+
+  pinAgentPanel = async (focusInput = false) => {
+    if (!this.shouldPinAgentPanel()) {
+      return;
+    }
+
+    this.agentPanelPinned = true;
+    this.agentSidebarOpen = true;
+    this.restorePageInteraction();
+    this.appendOrUpdateAgentContextMessage();
+
+    if (focusInput) {
+      await nextTick();
+      this.agentInputRef?.focus();
+    }
+  };
+
+  closeAgentPanel = (e?: Event) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    this.agentSidebarOpen = false;
+    this.agentPanelPinned = false;
+    this.removeCover(true);
   };
 
   // 全局键盘监听器：统一更新当前模式状态
@@ -588,8 +769,126 @@ export class LovinspComponent extends LitElement {
       } else {
         this.sourceContext = null;
       }
+      this.updateSelectedAgentSourceContext();
     } catch {
       // 忽略 abort 错误
+    }
+  };
+
+  handleAgentPromptInput = (e: Event) => {
+    this.agentPrompt = (e.target as HTMLTextAreaElement).value;
+    if (this.agentStatus !== 'submitting') {
+      this.agentStatus = 'idle';
+      this.agentMessage = '';
+    }
+  };
+
+  handleAgentKeyDown = (e: KeyboardEvent) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      this.submitAgentRequest();
+    }
+  };
+
+  submitAgentRequest = async () => {
+    const prompt = this.agentPrompt.trim();
+    if (!this.agent || this.agentStatus === 'submitting') {
+      return;
+    }
+    if (!prompt) {
+      this.agentStatus = 'error';
+      this.agentMessage = 'Enter a change request first.';
+      return;
+    }
+    const sourceElement = this.getAgentSourceElement();
+    const sourceContext = this.getAgentSourceContext();
+    if (!sourceElement.path) {
+      this.agentStatus = 'error';
+      this.agentMessage = 'No source file is selected.';
+      return;
+    }
+
+    this.agentStatus = 'submitting';
+    this.agentMessage = 'Applying change...';
+    this.agentSidebarOpen = true;
+    const userMessage: AgentChatMessage = {
+      id: createAgentMessageId(),
+      role: 'user',
+      content: prompt,
+      createdAt: Date.now(),
+      source: { ...sourceElement },
+      sourceContext,
+    };
+    const assistantMessageId = createAgentMessageId();
+    const assistantMessage: AgentChatMessage = {
+      id: assistantMessageId,
+      role: 'assistant',
+      content: 'Codex is working on this component...',
+      status: 'submitting',
+      createdAt: Date.now(),
+      source: { ...sourceElement },
+      sourceContext,
+    };
+    this.agentMessages = [...this.agentMessages, userMessage, assistantMessage];
+    this.agentPrompt = '';
+
+    try {
+      const response = await fetch(`http://${this.ip}:${this.port}/agent`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Lovinsp-Agent-Token': this.agentToken,
+        },
+        body: JSON.stringify({
+          prompt,
+          source: {
+            file: sourceElement.path,
+            line: sourceElement.line,
+            column: sourceElement.column,
+            name: sourceElement.name,
+            textContent: sourceElement.textContent,
+            ancestorChain: this.ancestorChain,
+            sourceContext,
+            pageUrl: window.location.href,
+          },
+        }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || result.ok === false) {
+        throw new Error(result.error || `Agent request failed (${response.status})`);
+      }
+      this.agentStatus = 'success';
+      this.agentMessage = String(result.message || 'Change request completed.').slice(0, 240);
+      this.agentMessages = this.agentMessages.map((message) =>
+        message.id === assistantMessageId
+          ? {
+              ...message,
+              content: this.agentMessage,
+              status: 'success',
+            }
+          : message
+      );
+      window.dispatchEvent(
+        new CustomEvent('lovinsp:agentRequest', {
+          detail: {
+            prompt,
+            source: sourceElement,
+            result,
+          },
+        })
+      );
+    } catch (error: any) {
+      this.agentStatus = 'error';
+      this.agentMessage = String(error?.message || 'Agent request failed.').slice(0, 240);
+      this.agentMessages = this.agentMessages.map((message) =>
+        message.id === assistantMessageId
+          ? {
+              ...message,
+              content: this.agentMessage,
+              status: 'error',
+            }
+          : message
+      );
     }
   };
 
@@ -674,11 +973,10 @@ export class LovinspComponent extends LitElement {
         String(this.element.column),
         this.copy
       );
-      // 格式：file:line:col(祖先1>祖先2>当前)
-      const chainStr = this.ancestorChain.length > 0
-        ? `(${this.ancestorChain.join('>')})`
-        : '';
-      this.copyToClipboard(`${path[0]}${chainStr}`);
+      // 默认只复制 file:line:col；模板中可用 {ancestorChain} 引用祖先链（祖先1>祖先2>当前）
+      this.copyToClipboard(
+        path[0].replace(/\{ancestorChain\}/g, this.ancestorChain.join('>'))
+      );
     }
     if (shouldTarget) {
       window.open(this.buildTargetUrl(), '_blank');
@@ -1015,6 +1313,13 @@ export class LovinspComponent extends LitElement {
 
   // 鼠标移动渲染遮罩层位置
   handleMouseMove = async (e: MouseEvent | TouchEvent) => {
+    if (this.isInspectorPanelEvent(e)) {
+      return;
+    }
+    if (this.agentPanelPinned && !this.isTracking(e)) {
+      return;
+    }
+
     // 记录鼠标位置（使用视口坐标，与 fixed 定位的悬浮窗一致）
     if (e instanceof MouseEvent) {
       this.mouseX = e.clientX;
@@ -1041,6 +1346,10 @@ export class LovinspComponent extends LitElement {
   // 注意：只要按住快捷键就阻止，不管 overlay 是否显示
   // 因为 Portal 渲染的元素（如 Select 下拉选项）没有 data-insp-path，会导致 overlay 消失
   handleMouseDown = (e: MouseEvent | TouchEvent) => {
+    if (this.isInspectorPanelEvent(e)) {
+      return;
+    }
+
     if (this.isTracking(e)) {
       // 必须在 mousedown 阶段就阻止，否则原生控件（select/checkbox）会响应
       e.preventDefault();
@@ -1050,6 +1359,10 @@ export class LovinspComponent extends LitElement {
 
   // 鼠标点击执行 inspector 操作
   handleMouseClick = (e: MouseEvent | TouchEvent) => {
+    if (this.isInspectorPanelEvent(e)) {
+      return;
+    }
+
     if (this.isTracking(e)) {
       // 只要按住快捷键就阻止事件，防止穿透到 Portal 元素（如 Select 下拉选项）
       e.preventDefault();
@@ -1062,6 +1375,11 @@ export class LovinspComponent extends LitElement {
       }
 
       if (this.show) {
+        if (this.shouldPinAgentPanel()) {
+          this.pinAgentPanel(true);
+          return;
+        }
+
         // 使用全局共享的当前模式
         const actionToExecute = this.currentMode || this.getDefaultAction();
 
@@ -1097,7 +1415,7 @@ export class LovinspComponent extends LitElement {
     // 取消待执行的 click 操作，防止双指右键误触发
     this.pendingClickAction = null;
 
-    if (this.isTracking(e) && !this.dragging) {
+    if (!this.isInspectorPanelEvent(e) && this.isTracking(e) && !this.dragging) {
       // 必须同时阻止默认行为和事件传播，防止右键菜单和文本选择等行为透传
       e.preventDefault();
       e.stopImmediatePropagation();
@@ -1159,6 +1477,10 @@ export class LovinspComponent extends LitElement {
         // 完全阻止事件传播和默认行为
         e.preventDefault();
         e.stopImmediatePropagation();
+        if (this.shouldPinAgentPanel()) {
+          this.pinAgentPanel(true);
+          return;
+        }
         // 唤醒 vscode
         this.trackCode();
         // 清除遮罩层
@@ -1169,13 +1491,27 @@ export class LovinspComponent extends LitElement {
 
   // 监听键盘抬起，清除遮罩层
   handleKeyUp = (e: KeyboardEvent) => {
+    if (this.isInspectorPanelEvent(e)) {
+      return;
+    }
+
     if (!this.isTracking(e)) {
+      if (this.shouldPinAgentPanel()) {
+        this.pinAgentPanel();
+        return;
+      }
       this.removeCover();
     }
   };
 
   // 处理锁定模式切换 (Shift+Alt+T) 和 ESC 退出
   handleLockToggle = (e: KeyboardEvent) => {
+    if (e.key === 'Escape' && this.agentPanelPinned) {
+      this.closeAgentPanel(e);
+      this.removeLayerPanel();
+      return;
+    }
+
     // ESC 退出锁定模式
     if (e.key === 'Escape' && this.locked) {
       this.locked = false;
@@ -1202,6 +1538,10 @@ export class LovinspComponent extends LitElement {
 
   // 阻止文本选择（Shift+点击会触发浏览器的扩展选择行为）
   handleSelectStart = (e: Event) => {
+    if (this.isInspectorPanelEvent(e)) {
+      return;
+    }
+
     // selectstart 事件没有修饰键信息，需要用全局状态判断
     if (this.show || this.showNodeTree) {
       e.preventDefault();
@@ -1420,6 +1760,131 @@ export class LovinspComponent extends LitElement {
     ${node.children.map((child) => this.renderNodeTree(child))}
   `;
 
+  renderAgentSource = (
+    source?: ElementInfo,
+    sourceContext?: SourceContext | null
+  ) => {
+    if (!source?.path) {
+      return '';
+    }
+
+    return html`
+      <div class="agent-source-card">
+        <div class="agent-source-title">
+          <span>&lt;${source.name}&gt;</span>
+          ${source.textContent ? html`<small>${source.textContent}</small>` : ''}
+        </div>
+        <div class="agent-source-path">
+          ${source.path}:${source.line}:${source.column}
+        </div>
+        ${sourceContext?.lines?.length ? html`
+          <pre class="agent-source-preview"><code>${sourceContext.lines.map((line, idx) => {
+            const lineNum = sourceContext.startLine + idx;
+            const isTarget = lineNum === sourceContext.targetLine;
+            return html`<div class="agent-source-line ${isTarget ? 'target' : ''}"><span>${lineNum}</span><em>${line || ' '}</em></div>`;
+          })}</code></pre>
+        ` : ''}
+      </div>
+    `;
+  };
+
+  renderAgentMessage = (message: AgentChatMessage) => {
+    const roleLabel =
+      message.role === 'context'
+        ? 'Context'
+        : message.role === 'user'
+          ? 'You'
+          : 'Codex';
+
+    return html`
+      <article class="agent-chat-message ${message.role} ${message.status || 'idle'}">
+        <div class="agent-message-meta">
+          <span>${roleLabel}</span>
+          ${message.status === 'submitting' ? html`<small>Working</small>` : ''}
+        </div>
+        <div class="agent-message-body">${message.content}</div>
+        ${message.role === 'context'
+          ? this.renderAgentSource(message.source, message.sourceContext)
+          : ''}
+      </article>
+    `;
+  };
+
+  renderAgentSidebar = () => {
+    if (!this.agent) {
+      return '';
+    }
+
+    const activeSource = this.agentSelectedElement || this.element;
+    const activeSourceContext =
+      this.agentSelectedSourceContext || this.sourceContext;
+
+    return html`
+      <aside
+        id="agent-sidebar"
+        class="agent-sidebar ${this.agentSidebarOpen ? 'open' : ''}"
+      >
+        <header class="agent-sidebar-header">
+          <div>
+            <strong>Lovinsp Agent</strong>
+            <span>Codex backend</span>
+          </div>
+          <button
+            class="agent-sidebar-close"
+            type="button"
+            aria-label="Close agent sidebar"
+            @click=${this.closeAgentPanel}
+          >
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M4 4l8 8M12 4l-8 8" />
+            </svg>
+          </button>
+        </header>
+
+        <section class="agent-sidebar-context">
+          ${activeSource.path
+            ? this.renderAgentSource(activeSource, activeSourceContext)
+            : html`<div class="agent-empty">Select a component to attach context.</div>`}
+        </section>
+
+        <section class="agent-chat-list">
+          ${this.agentMessages.length
+            ? this.agentMessages.map((message) => this.renderAgentMessage(message))
+            : html`
+                <div class="agent-empty">
+                  Select a component, then describe the source change.
+                </div>
+              `}
+        </section>
+
+        <footer class="agent-composer">
+          <textarea
+            class="agent-sidebar-input"
+            .value=${this.agentPrompt}
+            placeholder=${this.agentPlaceholder}
+            rows="3"
+            ?disabled=${this.agentStatus === 'submitting'}
+            @input=${this.handleAgentPromptInput}
+            @keydown=${this.handleAgentKeyDown}
+          ></textarea>
+          <div class="agent-composer-actions">
+            <span class="agent-status ${this.agentStatus}">
+              ${this.agentMessage}
+            </span>
+            <button
+              class="agent-submit"
+              type="button"
+              ?disabled=${this.agentStatus === 'submitting' || !this.agentPrompt.trim()}
+              @click=${this.submitAgentRequest}
+            >
+              ${this.agentStatus === 'submitting' ? 'Working' : this.agentSubmitLabel}
+            </button>
+          </div>
+        </footer>
+      </aside>
+    `;
+  };
+
   render() {
     // Get mode-specific styling (unified global mode state)
     const currentMode = this.currentMode || this.getDefaultAction();
@@ -1564,6 +2029,18 @@ export class LovinspComponent extends LitElement {
             })}>
               <span class="mode-icon">${modeIcon}</span>
               <span class="mode-text">${this.getActionLabel(currentMode)}</span>
+              ${this.agent ? html`
+                <button
+                  class="agent-close"
+                  type="button"
+                  aria-label="Close agent panel"
+                  @click=${this.closeAgentPanel}
+                >
+                  <svg viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M4 4l8 8M12 4l-8 8" />
+                  </svg>
+                </button>
+              ` : ''}
             </div>
             <div class="name-line">
               <div class="element-name">
@@ -1670,6 +2147,7 @@ export class LovinspComponent extends LitElement {
       >
         ${this.activeNode.content}
       </div>
+      ${this.renderAgentSidebar()}
     `;
   }
 
@@ -1708,6 +2186,7 @@ export class LovinspComponent extends LitElement {
     .element-info {
       position: absolute;
       transition: border-color 0.2s ease-in-out;
+      pointer-events: auto;
     }
     .element-info.hidden {
       visibility: hidden;
@@ -1743,6 +2222,33 @@ export class LovinspComponent extends LitElement {
     }
     .mode-text {
       flex: 1;
+    }
+    .agent-close {
+      width: 22px;
+      height: 22px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: currentColor;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      opacity: 0.72;
+      flex: none;
+    }
+    .agent-close:hover {
+      background: rgba(0, 0, 0, 0.08);
+      opacity: 1;
+    }
+    .agent-close svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      pointer-events: none;
+      fill: none;
     }
     .name-line {
       padding: 6px 10px 4px;
@@ -1785,6 +2291,272 @@ export class LovinspComponent extends LitElement {
       .line-code {
         flex: 1;
       }
+    }
+    .agent-sidebar {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: min(420px, 100vw);
+      height: 100vh;
+      z-index: 99999999999999;
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr) auto;
+      background: #fbfbf8;
+      color: #181818;
+      border-left: 1px solid rgba(0, 0, 0, 0.08);
+      box-shadow: -20px 0 50px rgba(0, 0, 0, 0.18);
+      font-family: 'SF Pro Text', 'PingFang SC', system-ui, sans-serif;
+      transform: translateX(100%);
+      transition: transform 0.18s ease-out;
+      pointer-events: auto;
+    }
+    .agent-sidebar.open {
+      transform: translateX(0);
+    }
+    .agent-sidebar-header {
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+      background: #ffffff;
+    }
+    .agent-sidebar-header strong {
+      display: block;
+      font-size: 13px;
+      line-height: 1.3;
+      font-weight: 700;
+    }
+    .agent-sidebar-header span {
+      display: block;
+      margin-top: 2px;
+      color: #6f6f68;
+      font-size: 11px;
+      line-height: 1.3;
+    }
+    .agent-sidebar-close {
+      width: 30px;
+      height: 30px;
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: #181818;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      padding: 0;
+    }
+    .agent-sidebar-close:hover {
+      background: rgba(0, 0, 0, 0.07);
+    }
+    .agent-sidebar-close svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      fill: none;
+    }
+    .agent-sidebar-context {
+      padding: 12px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+      background: #f4f4ef;
+    }
+    .agent-chat-list {
+      min-height: 0;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .agent-chat-message {
+      max-width: 100%;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 8px;
+      background: #ffffff;
+      padding: 10px;
+      overflow: hidden;
+    }
+    .agent-chat-message.user {
+      margin-left: 32px;
+      background: #181818;
+      color: #ffffff;
+      border-color: #181818;
+    }
+    .agent-chat-message.assistant.error {
+      border-color: rgba(217, 45, 32, 0.35);
+      background: #fff8f7;
+    }
+    .agent-chat-message.context {
+      background: #f7fbff;
+      border-color: rgba(0, 106, 255, 0.2);
+    }
+    .agent-message-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+      font-size: 10px;
+      line-height: 1.3;
+      color: #6f6f68;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    .agent-chat-message.user .agent-message-meta {
+      color: rgba(255, 255, 255, 0.72);
+    }
+    .agent-message-meta small {
+      font-size: 10px;
+      color: #006aff;
+      text-transform: none;
+      font-weight: 600;
+    }
+    .agent-message-body {
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 12px;
+      line-height: 1.55;
+    }
+    .agent-source-card {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+    .agent-message-body + .agent-source-card {
+      margin-top: 8px;
+    }
+    .agent-source-title {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      min-width: 0;
+      font-size: 12px;
+      line-height: 1.35;
+      font-weight: 700;
+    }
+    .agent-source-title small {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #6f6f68;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .agent-source-path {
+      color: #4b5563;
+      font: 10px/1.45 'SF Mono', 'Monaco', 'Cascadia Code', monospace;
+      word-break: break-all;
+    }
+    .agent-source-preview {
+      max-height: 180px;
+      overflow: auto;
+      margin: 0;
+      padding: 8px;
+      border-radius: 7px;
+      background: #1f2328;
+      color: #d4d4d4;
+      font: 10px/1.45 'SF Mono', 'Monaco', 'Cascadia Code', monospace;
+    }
+    .agent-source-line {
+      display: flex;
+      gap: 10px;
+      white-space: pre;
+    }
+    .agent-source-line.target {
+      background: rgba(255, 200, 50, 0.22);
+      border-radius: 3px;
+    }
+    .agent-source-line span {
+      min-width: 30px;
+      color: #8b949e;
+      text-align: right;
+      user-select: none;
+    }
+    .agent-source-line em {
+      flex: 1;
+      min-width: 0;
+      font-style: normal;
+    }
+    .agent-composer {
+      padding: 12px;
+      display: grid;
+      gap: 8px;
+      border-top: 1px solid rgba(0, 0, 0, 0.08);
+      background: #ffffff;
+    }
+    .agent-sidebar-input {
+      width: 100%;
+      min-height: 84px;
+      box-sizing: border-box;
+      resize: vertical;
+      border: 1px solid rgba(24, 24, 24, 0.14);
+      border-radius: 8px;
+      background: #ffffff;
+      color: #181818;
+      padding: 9px;
+      font: 12px/1.45 'SF Pro Text', 'PingFang SC', sans-serif;
+      outline: none;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
+    }
+    .agent-sidebar-input:focus {
+      border-color: #006aff;
+      box-shadow: 0 0 0 2px rgba(0, 106, 255, 0.12);
+    }
+    .agent-sidebar-input:disabled {
+      color: #87867F;
+      background: #f3f3ef;
+      cursor: progress;
+    }
+    .agent-composer-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .agent-status {
+      flex: 1;
+      min-height: 16px;
+      color: #6f6f68;
+      font-size: 10px;
+      line-height: 1.45;
+      word-break: break-word;
+    }
+    .agent-status.success {
+      color: #00B42A;
+    }
+    .agent-status.error {
+      color: #d92d20;
+    }
+    .agent-submit {
+      min-width: 64px;
+      height: 28px;
+      border: 0;
+      border-radius: 8px;
+      background: #181818;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 0 10px;
+      white-space: nowrap;
+    }
+    .agent-submit:hover:not(:disabled) {
+      background: #006aff;
+    }
+    .agent-submit:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+    .agent-empty {
+      padding: 18px 12px;
+      color: #6f6f68;
+      font-size: 12px;
+      line-height: 1.5;
+      text-align: center;
     }
     .brand-footer {
       border-top: 1px solid rgba(0, 0, 0, 0.05);

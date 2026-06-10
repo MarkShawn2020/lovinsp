@@ -3,74 +3,27 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { LovinspComponent } from '@/core/src/client';
 
+const nextFrame = () =>
+  new Promise<void>((resolve) => {
+    requestAnimationFrame(() => resolve());
+  });
+
+function createMouseClick() {
+  const event = new MouseEvent('click', { cancelable: true });
+  const preventDefault = vi.spyOn(event, 'preventDefault');
+  const stopImmediatePropagation = vi.spyOn(event, 'stopImmediatePropagation');
+  return { event, preventDefault, stopImmediatePropagation };
+}
+
 describe('handleMouseClick', () => {
   let component: LovinspComponent;
 
   beforeEach(() => {
     component = new LovinspComponent();
     document.body.appendChild(component);
-    
-    // 模拟方法
     component.isTracking = vi.fn().mockReturnValue(true);
     component.trackCode = vi.fn();
     component.removeCover = vi.fn();
-  });
-
-  describe('Preferred Action Logic', () => {
-    it('should fallback to locate when copy is disabled', () => {
-      component.show = true;
-      component.copy = false;
-      component.locate = true;
-      component.defaultAction = 'copy';
-      const mouseEvent = new MouseEvent('click');
-      mouseEvent.stopPropagation = vi.fn();
-      mouseEvent.preventDefault = vi.fn();
-
-      component.handleMouseClick(mouseEvent);
-
-      expect(component.trackCode).toHaveBeenCalledWith('locate');
-    });
-
-    it('should respect an explicit locate defaultAction', () => {
-      component.show = true;
-      component.defaultAction = 'locate';
-      const mouseEvent = new MouseEvent('click');
-      mouseEvent.stopPropagation = vi.fn();
-      mouseEvent.preventDefault = vi.fn();
-
-      component.handleMouseClick(mouseEvent);
-
-      expect(component.trackCode).toHaveBeenCalledWith('locate');
-    });
-
-    it('should fallback to target when locate is disabled', () => {
-      component.show = true;
-      component.copy = false;
-      component.locate = false;
-      component.target = 'https://example.com/{file}';
-      component.defaultAction = 'locate';
-      const mouseEvent = new MouseEvent('click');
-      mouseEvent.stopPropagation = vi.fn();
-      mouseEvent.preventDefault = vi.fn();
-
-      component.handleMouseClick(mouseEvent);
-
-      expect(component.trackCode).toHaveBeenCalledWith('target');
-    });
-
-    it('should skip trackCode when no actions are enabled', () => {
-      component.show = true;
-      component.copy = false;
-      component.locate = false;
-      component.target = '';
-      const mouseEvent = new MouseEvent('click');
-      mouseEvent.stopPropagation = vi.fn();
-      mouseEvent.preventDefault = vi.fn();
-
-      component.handleMouseClick(mouseEvent);
-
-      expect(component.trackCode).not.toHaveBeenCalled();
-    });
   });
 
   afterEach(() => {
@@ -78,135 +31,157 @@ describe('handleMouseClick', () => {
     vi.clearAllMocks();
   });
 
-  describe('Basic Functionality', () => {
-    it('should handle click when tracking and show is true', () => {
+  describe('Preferred Action Logic', () => {
+    it('falls back to locate when copy is disabled', async () => {
       component.show = true;
-      const mouseEvent = new MouseEvent('click');
-      mouseEvent.stopPropagation = vi.fn();
-      mouseEvent.preventDefault = vi.fn();
+      component.copy = false;
+      component.locate = true;
+      component.defaultAction = 'copy';
+      const { event } = createMouseClick();
 
-      component.handleMouseClick(mouseEvent);
+      component.handleMouseClick(event);
+      await nextFrame();
 
-      expect(mouseEvent.stopPropagation).toHaveBeenCalled();
-      expect(mouseEvent.preventDefault).toHaveBeenCalled();
-      expect(component.trackCode).toHaveBeenCalledWith('copy');
-      expect(component.removeCover).toHaveBeenCalled();
+      expect(component.trackCode).toHaveBeenCalledWith('locate');
     });
 
-    it('should handle click when open and show is true', () => {
-      component.open = true;
+    it('respects an explicit locate defaultAction', async () => {
       component.show = true;
-      const mouseEvent = new MouseEvent('click');
-      mouseEvent.stopPropagation = vi.fn();
-      mouseEvent.preventDefault = vi.fn();
+      component.defaultAction = 'locate';
+      const { event } = createMouseClick();
 
-      component.handleMouseClick(mouseEvent);
+      component.handleMouseClick(event);
+      await nextFrame();
 
-      expect(mouseEvent.stopPropagation).toHaveBeenCalled();
-      expect(mouseEvent.preventDefault).toHaveBeenCalled();
-      expect(component.trackCode).toHaveBeenCalledWith('copy');
+      expect(component.trackCode).toHaveBeenCalledWith('locate');
+    });
+
+    it('falls back to target when locate is disabled', async () => {
+      component.show = true;
+      component.copy = false;
+      component.locate = false;
+      component.target = 'https://example.com/{file}';
+      component.defaultAction = 'locate';
+      const { event } = createMouseClick();
+
+      component.handleMouseClick(event);
+      await nextFrame();
+
+      expect(component.trackCode).toHaveBeenCalledWith('target');
+    });
+
+    it('clears the overlay without tracking when no actions are enabled', () => {
+      component.show = true;
+      component.copy = false;
+      component.locate = false;
+      component.target = '';
+      const { event } = createMouseClick();
+
+      component.handleMouseClick(event);
+
+      expect(component.trackCode).not.toHaveBeenCalled();
       expect(component.removeCover).toHaveBeenCalled();
     });
   });
 
-  describe('Auto Toggle Behavior', () => {
-    it('should set open to false when autoToggle is true', () => {
+  describe('Basic Functionality', () => {
+    it('executes the default inspector action when tracking and visible', async () => {
       component.show = true;
-      component.open = true;
-      component.autoToggle = true;
-      const mouseEvent = new MouseEvent('click');
-      mouseEvent.stopPropagation = vi.fn();
-      mouseEvent.preventDefault = vi.fn();
+      const { event, preventDefault, stopImmediatePropagation } =
+        createMouseClick();
 
-      component.handleMouseClick(mouseEvent);
+      component.handleMouseClick(event);
+      await nextFrame();
 
-      expect(component.open).toBe(false);
+      expect(preventDefault).toHaveBeenCalled();
+      expect(stopImmediatePropagation).toHaveBeenCalled();
+      expect(component.trackCode).toHaveBeenCalledWith('copy');
+      expect(component.removeCover).toHaveBeenCalled();
     });
 
-    it('should not change open state when autoToggle is false', () => {
+    it('does not clear the overlay after action execution in locked mode', async () => {
       component.show = true;
-      component.open = true;
-      component.autoToggle = false;
-      const mouseEvent = new MouseEvent('click');
-      mouseEvent.stopPropagation = vi.fn();
-      mouseEvent.preventDefault = vi.fn();
+      component.locked = true;
+      const { event } = createMouseClick();
 
-      component.handleMouseClick(mouseEvent);
+      component.handleMouseClick(event);
+      await nextFrame();
 
-      expect(component.open).toBe(true);
+      expect(component.trackCode).toHaveBeenCalledWith('copy');
+      expect(component.removeCover).not.toHaveBeenCalled();
     });
   });
 
   describe('No Action Conditions', () => {
-    it('should not take action when show is false', () => {
+    it('blocks page clicks while tracking even when the overlay is hidden', () => {
       component.show = false;
-      const mouseEvent = new MouseEvent('click');
-      mouseEvent.stopPropagation = vi.fn();
-      mouseEvent.preventDefault = vi.fn();
+      const { event, preventDefault, stopImmediatePropagation } =
+        createMouseClick();
 
-      component.handleMouseClick(mouseEvent);
+      component.handleMouseClick(event);
 
-      expect(mouseEvent.stopPropagation).not.toHaveBeenCalled();
-      expect(mouseEvent.preventDefault).not.toHaveBeenCalled();
+      expect(preventDefault).toHaveBeenCalled();
+      expect(stopImmediatePropagation).toHaveBeenCalled();
       expect(component.trackCode).not.toHaveBeenCalled();
       expect(component.removeCover).not.toHaveBeenCalled();
     });
 
-    it('should not take action when neither tracking nor open', () => {
+    it('does not take action when not tracking', () => {
       component.show = true;
-      component.open = false;
-      // @ts-ignore
-      component.isTracking.mockReturnValue(false);
-      const mouseEvent = new MouseEvent('click');
-      mouseEvent.stopPropagation = vi.fn();
-      mouseEvent.preventDefault = vi.fn();
+      vi.mocked(component.isTracking).mockReturnValue(false);
+      const { event, preventDefault, stopImmediatePropagation } =
+        createMouseClick();
 
-      component.handleMouseClick(mouseEvent);
+      component.handleMouseClick(event);
 
-      expect(mouseEvent.stopPropagation).not.toHaveBeenCalled();
-      expect(mouseEvent.preventDefault).not.toHaveBeenCalled();
+      expect(preventDefault).not.toHaveBeenCalled();
+      expect(stopImmediatePropagation).not.toHaveBeenCalled();
       expect(component.trackCode).not.toHaveBeenCalled();
       expect(component.removeCover).not.toHaveBeenCalled();
     });
   });
 
   describe('Touch Events', () => {
-    it('should handle touch events correctly', () => {
+    it('handles touch events with the same tracking flow', async () => {
       component.show = true;
-      const touchEvent = new TouchEvent('touchstart');
-      touchEvent.stopPropagation = vi.fn();
-      touchEvent.preventDefault = vi.fn();
+      const event = new TouchEvent('touchstart', { cancelable: true });
+      const preventDefault = vi.spyOn(event, 'preventDefault');
+      const stopImmediatePropagation = vi.spyOn(
+        event,
+        'stopImmediatePropagation'
+      );
 
-      component.handleMouseClick(touchEvent);
+      component.handleMouseClick(event);
+      await nextFrame();
 
-      expect(touchEvent.stopPropagation).toHaveBeenCalled();
-      expect(touchEvent.preventDefault).toHaveBeenCalled();
-      expect(component.trackCode).toHaveBeenCalled();
+      expect(preventDefault).toHaveBeenCalled();
+      expect(stopImmediatePropagation).toHaveBeenCalled();
+      expect(component.trackCode).toHaveBeenCalledWith('copy');
       expect(component.removeCover).toHaveBeenCalled();
     });
   });
 
   describe('Method Call Order', () => {
-    it('should call methods in correct order', () => {
+    it('prevents the page click before running the inspector action', async () => {
       const calls: string[] = [];
       component.show = true;
-      component.autoToggle = true;
-      
-      // 模拟方法以记录调用顺序
       component.trackCode = vi.fn(() => calls.push('trackCode'));
       component.removeCover = vi.fn(() => calls.push('removeCover'));
-      
-      const mouseEvent = new MouseEvent('click');
-      mouseEvent.stopPropagation = vi.fn(() => calls.push('stopPropagation'));
-      mouseEvent.preventDefault = vi.fn(() => calls.push('preventDefault'));
 
-      component.handleMouseClick(mouseEvent);
+      const event = new MouseEvent('click', { cancelable: true });
+      event.preventDefault = vi.fn(() => calls.push('preventDefault'));
+      event.stopImmediatePropagation = vi.fn(() =>
+        calls.push('stopImmediatePropagation')
+      );
+
+      component.handleMouseClick(event);
+      await nextFrame();
 
       expect(calls).toEqual([
-        'stopPropagation',
         'preventDefault',
+        'stopImmediatePropagation',
         'trackCode',
-        'removeCover'
+        'removeCover',
       ]);
     });
   });

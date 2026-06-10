@@ -35,6 +35,74 @@ window.addEventListener('code-inspector:trackCode', () => {
 });
 ```
 
+## agent
+
+- Optional
+- Type:
+  ```ts
+  type AgentRequest = {
+    prompt: string;
+    source: {
+      file: string;
+      line: number;
+      column: number;
+      name: string;
+      textContent?: string;
+      ancestorChain?: string[];
+      pageUrl?: string;
+      sourceContext?: {
+        lines: string[];
+        startLine: number;
+        targetLine: number;
+      } | null;
+    };
+  };
+
+  type AgentOptions = {
+    enabled?: boolean;
+    placeholder?: string;
+    submitLabel?: string;
+    onRequest?: (request: AgentRequest) => Promise<string | void> | string | void;
+    command?: string;
+    args?: string[];
+    cwd?: string;
+    env?: Record<string, string>;
+    timeout?: number;
+    input?: 'prompt' | 'json';
+    promptTemplate?: string;
+  };
+  ```
+- Description: Adds a right-side Agent chat sidebar to the inspector. After you select a component, `lovinsp` automatically attaches the selected DOM source context to the sidebar; when you type a component change request, it sends that context to the local Node server and runs either `agent.onRequest` or the configured `agent.command`. The endpoint is protected by a per-dev-server token injected into the client.
+- Example using a custom handler:
+
+```ts
+lovinspPlugin({
+  bundler: 'vite',
+  agent: {
+    async onRequest(request) {
+      // Call your own coding agent here. The handler runs in Node.js
+      // and can update files in the local project.
+      console.log(request.prompt, request.source.file);
+      return 'Request sent to agent.';
+    },
+  },
+});
+```
+
+- Example using a local command:
+
+```ts
+lovinspPlugin({
+  bundler: 'vite',
+  agent: {
+    command: 'your-agent-cli',
+    args: ['--file', '{file}', '--line', '{line}'],
+    input: 'prompt',
+    timeout: 120000,
+  },
+});
+```
+
 
 
 ## ip <Badge type="tip" text="0.13.0+" vertical="middle" />

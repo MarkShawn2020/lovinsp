@@ -35,6 +35,74 @@ window.addEventListener('code-inspector:trackCode', () => {
 });
 ```
 
+## agent
+
+- 可选项
+- 类型：
+  ```ts
+  type AgentRequest = {
+    prompt: string;
+    source: {
+      file: string;
+      line: number;
+      column: number;
+      name: string;
+      textContent?: string;
+      ancestorChain?: string[];
+      pageUrl?: string;
+      sourceContext?: {
+        lines: string[];
+        startLine: number;
+        targetLine: number;
+      } | null;
+    };
+  };
+
+  type AgentOptions = {
+    enabled?: boolean;
+    placeholder?: string;
+    submitLabel?: string;
+    onRequest?: (request: AgentRequest) => Promise<string | void> | string | void;
+    command?: string;
+    args?: string[];
+    cwd?: string;
+    env?: Record<string, string>;
+    timeout?: number;
+    input?: 'prompt' | 'json';
+    promptTemplate?: string;
+  };
+  ```
+- 说明：在 inspector 中增加右侧 Agent chat sidebar。选中组件后，`lovinsp` 会自动把当前 DOM 对应的源码上下文发送到 sidebar；输入组件修改需求后，会把该上下文发送到本地 Node server，然后执行 `agent.onRequest` 或配置的 `agent.command`。该接口会使用每次 dev server 启动时生成的 token 进行校验。
+- 使用自定义 handler：
+
+```ts
+lovinspPlugin({
+  bundler: 'vite',
+  agent: {
+    async onRequest(request) {
+      // 在这里接入你自己的 coding agent。该函数运行在 Node.js 中，
+      // 可以修改本地项目文件。
+      console.log(request.prompt, request.source.file);
+      return '已发送给 agent。';
+    },
+  },
+});
+```
+
+- 使用本地命令：
+
+```ts
+lovinspPlugin({
+  bundler: 'vite',
+  agent: {
+    command: 'your-agent-cli',
+    args: ['--file', '{file}', '--line', '{line}'],
+    input: 'prompt',
+    timeout: 120000,
+  },
+});
+```
+
 ## ip <Badge type="tip" text="0.13.0+" vertical="middle" />
 
 - 可选项

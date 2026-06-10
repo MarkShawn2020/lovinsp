@@ -65,10 +65,15 @@ function serializeSourcePriority(
   );
 }
 
+function isAgentEnabled(agent: CodeOptions['agent']) {
+  return !!agent && agent.enabled !== false;
+}
+
 export function getInjectedCode(
   options: CodeOptions,
   port: number,
-  isNextjs: boolean
+  isNextjs: boolean,
+  agentToken: string = ''
 ) {
   let code = `'use client';`;
   if (!options?.skipSnippets?.includes?.('console')) {
@@ -77,7 +82,7 @@ export function getInjectedCode(
   if (options?.hideDomPathAttr) {
     code += getHidePathAttrCode();
   }
-  code += getWebComponentCode(options, port);
+  code += getWebComponentCode(options, port, agentToken);
   code = `/* eslint-disable */ ` + code.replace(/\n/g, '');
   if (isNextjs) {
     code += `
@@ -161,7 +166,11 @@ function addImportToEntry(content: string, webComponentNpmPath: string) {
   }
 }
 
-export function getWebComponentCode(options: CodeOptions, port: number) {
+export function getWebComponentCode(
+  options: CodeOptions,
+  port: number,
+  agentToken: string = ''
+) {
   const {
     hotKeys = ['shiftKey', 'altKey'],
     showSwitch = false,
@@ -171,6 +180,7 @@ export function getWebComponentCode(options: CodeOptions, port: number) {
     ip = false,
     bundler,
     sourcePriority = [],
+    agent,
   } = options || ({} as CodeOptions);
   const {
     locate = true,
@@ -206,30 +216,53 @@ export function getWebComponentCode(options: CodeOptions, port: number) {
   return `
 ;(function (){
   if (typeof window !== 'undefined') {
-    if (!document.documentElement.querySelector('lovinsp-component')) {
-      ${bundler === 'mako' ? iifeClientJsCode : jsClientCode};
+    ${bundler === 'mako' ? iifeClientJsCode : jsClientCode};
 
-      var inspector = document.createElement('lovinsp-component');
-      inspector.port = ${port};
-      inspector.hotKeys = '${(hotKeys ? hotKeys : [])?.join(',')}';
-      inspector.copyKeys = '${copyKeysValue}';
-      inspector.locateKeys = ${useDynamicLocateKeys
-        ? `(/mac|iphone|ipad|ipod/i.test(navigator.userAgent)) ? 'shiftKey,altKey,metaKey' : 'shiftKey,altKey,ctrlKey'`
-        : `'${locateKeysValue}'`};
-      inspector.targetKeys = '${targetKeysValue}';
-      inspector.showSwitch = !!${showSwitch};
-      inspector.autoToggle = !!${autoToggle};
-      inspector.hideConsole = !!${hideConsole};
-      inspector.locate = !!${locate};
-      inspector.copy = ${typeof copy === 'string' ? `'${copy}'` : !!copy};
-      inspector.target = '${target}';
-      inspector.ip = '${getIP(ip)}';
-      inspector.defaultAction = ${JSON.stringify(defaultAction)};
-      inspector.sourcePriority = ${JSON.stringify(
-        serializeSourcePriority(sourcePriority)
-      )};
+    var inspectorTagName = 'lovinsp-component-${port}';
+    var InspectorElement = window.vueInspectorClient && window.vueInspectorClient.LovinspComponent;
+    if (InspectorElement && !customElements.get(inspectorTagName)) {
+      customElements.define(inspectorTagName, class LovinspScopedComponent extends InspectorElement {});
+    }
+    if (!customElements.get(inspectorTagName)) {
+      inspectorTagName = 'lovinsp-component';
+    }
+
+    var inspector = document.documentElement.querySelector(inspectorTagName);
+    if (!inspector) {
+      inspector = document.createElement(inspectorTagName);
       document.documentElement.append(inspector);
     }
+
+    inspector.port = ${port};
+    inspector.hotKeys = '${(hotKeys ? hotKeys : [])?.join(',')}';
+    inspector.copyKeys = '${copyKeysValue}';
+    inspector.locateKeys = ${useDynamicLocateKeys
+      ? `(/mac|iphone|ipad|ipod/i.test(navigator.userAgent)) ? 'shiftKey,altKey,metaKey' : 'shiftKey,altKey,ctrlKey'`
+      : `'${locateKeysValue}'`};
+    inspector.targetKeys = '${targetKeysValue}';
+    inspector.showSwitch = !!${showSwitch};
+    inspector.autoToggle = !!${autoToggle};
+    inspector.hideConsole = !!${hideConsole};
+    inspector.locate = !!${locate};
+    inspector.copy = ${typeof copy === 'string' ? `'${copy}'` : !!copy};
+    inspector.target = '${target}';
+    inspector.ip = '${getIP(ip)}';
+    inspector.defaultAction = ${JSON.stringify(defaultAction)};
+    inspector.sourcePriority = ${JSON.stringify(
+      serializeSourcePriority(sourcePriority)
+    )};
+    inspector.agent = !!${isAgentEnabled(agent)};
+    inspector.agentToken = ${JSON.stringify(agentToken)};
+    inspector.agentPlaceholder = ${JSON.stringify(
+      agent && agent.placeholder
+        ? agent.placeholder
+        : 'Describe the change for this component'
+    )};
+    inspector.agentSubmitLabel = ${JSON.stringify(
+      agent && agent.submitLabel
+        ? agent.submitLabel
+        : 'Apply'
+    )};
   }
 })();
 `;
@@ -378,7 +411,7 @@ export async function getCodeWithWebComponent({
     return code;
   }
   // start server
-  if (options.behavior?.locate !== false) {
+  if (options.behavior?.locate !== false || isAgentEnabled(options.agent)) {
     await startServer(options, record);
   }
 
@@ -390,10 +423,12 @@ export async function getCodeWithWebComponent({
   // 注入消除 warning 代码
   const isTargetFile = await isTargetFileToInject(file, record);
   if (isTargetFile || inject) {
+    const projectRecord = getProjectRecord(record);
     const injectCode = getInjectedCode(
       options,
-      getProjectRecord(record)?.port || 0,
-      isNextjs
+      projectRecord?.port || 0,
+      isNextjs,
+      projectRecord?.agentToken || ''
     );
     if (isNextjs || options.importClient === 'file') {
       writeEslintRcFile(record.output);

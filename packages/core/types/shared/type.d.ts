@@ -21,6 +21,10 @@ export type BehaviorKeys = {
 };
 export type Behavior = {
     locate?: boolean;
+    /**
+     * @cn 复制格式模板，支持 {file}、{line}、{column}、{ancestorChain}（祖先组件链，如 A>B>C）。true 为默认格式 {file}:{line}:{column}
+     * @en Copy format template. Supports {file}, {line}, {column}, {ancestorChain} (ancestor component chain like A>B>C). true uses default format {file}:{line}:{column}
+     */
     copy?: boolean | string;
     target?: string;
     defaultAction?: 'copy' | 'locate' | 'target' | 'all';
@@ -40,6 +44,7 @@ export type RecordInfo = {
     envDir?: string;
     root?: string;
     server?: Server;
+    agentToken?: string;
 };
 export type IDEOpenMethod = 'reuse' | 'new' | 'auto';
 export type ImportClientWay = 'file' | 'code';
@@ -48,6 +53,82 @@ type SourceInfo = {
     file: string;
     line: number;
     column: number;
+};
+export type AgentSourceContext = SourceInfo & {
+    name: string;
+    textContent?: string;
+    ancestorChain?: string[];
+    pageUrl?: string;
+    sourceContext?: {
+        lines: string[];
+        startLine: number;
+        targetLine: number;
+    } | null;
+};
+export type AgentRequest = {
+    prompt: string;
+    source: AgentSourceContext;
+};
+export type AgentResponse = {
+    message?: string;
+    [key: string]: unknown;
+};
+export type AgentOptions = {
+    /**
+     * @zh 是否启用前端组件修改输入框和本地 agent 请求接口。配置 agent 时默认启用。
+     * @en Whether to enable the frontend component change input and local agent request endpoint. Defaults to true when agent is configured.
+     */
+    enabled?: boolean;
+    /**
+     * @zh 前端输入框占位文案
+     * @en Placeholder text for the frontend input.
+     */
+    placeholder?: string;
+    /**
+     * @zh 前端提交按钮文案
+     * @en Label for the frontend submit button.
+     */
+    submitLabel?: string;
+    /**
+     * @zh server 端收到修改需求后的自定义处理函数。
+     * @en Custom server-side handler for component change requests.
+     */
+    onRequest?: (request: AgentRequest) => AgentResponse | string | void | Promise<AgentResponse | string | void>;
+    /**
+     * @zh server 端要启动的 agent 命令。会通过 stdin 接收请求上下文。
+     * @en Agent command to run on the server. The request context is passed through stdin.
+     */
+    command?: string;
+    /**
+     * @zh agent 命令参数，支持 {prompt}、{file}、{line}、{column}、{name} 模板。
+     * @en Agent command arguments. Supports {prompt}, {file}, {line}, {column}, and {name} templates.
+     */
+    args?: string[];
+    /**
+     * @zh 命令执行目录，默认使用项目根目录。
+     * @en Command working directory. Defaults to the project root.
+     */
+    cwd?: string;
+    /**
+     * @zh 传给命令的环境变量。
+     * @en Environment variables passed to the command.
+     */
+    env?: Record<string, string>;
+    /**
+     * @zh 命令超时时间，单位毫秒。默认 120000。
+     * @en Command timeout in milliseconds. Defaults to 120000.
+     */
+    timeout?: number;
+    /**
+     * @zh 传给命令 stdin 的内容格式，默认 prompt。
+     * @en stdin format passed to the command. Defaults to prompt.
+     */
+    input?: 'prompt' | 'json';
+    /**
+     * @zh 自定义 prompt 模板，支持 {prompt}、{file}、{line}、{column}、{name}、{textContent}、{ancestorChain}、{source}、{pageUrl}、{json}。
+     * @en Custom prompt template. Supports {prompt}, {file}, {line}, {column}, {name}, {textContent}, {ancestorChain}, {source}, {pageUrl}, and {json}.
+     */
+    promptTemplate?: string;
 };
 export type EscapeTags = (string | RegExp)[];
 export type SourcePriorityRule = {
@@ -209,5 +290,10 @@ export type CodeOptions = {
      * - htmlScript: Skip injecting the code snippet that injects script tags in html, it is not recommended to skip this item for MPA projects
      */
     skipSnippets?: ('console' | 'htmlScript')[];
+    /**
+     * @zh 在前端 inspector 中输入组件修改需求，并由本地 server 转发给 host-side agent。
+     * @en Type component change requests in the frontend inspector and forward them to a host-side agent through the local server.
+     */
+    agent?: AgentOptions | false;
 };
 export {};

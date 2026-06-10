@@ -57,7 +57,7 @@ export default function Login() {
         <LoginForm
           title={<LoginLogo />}
           subTitle={
-            <span className={styles.subtitle}>中后台管理系统通用模板</span>
+            <span className={styles.subtitle}>我爱你</span>
           }
           initialValues={{
             username: 'admin',
